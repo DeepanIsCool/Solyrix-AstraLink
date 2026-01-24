@@ -1,0 +1,24 @@
+[package]
+name = "identity-sbt"
+version = "1.0.0"
+authors = ["AstraLink Team"]
+description = "Soulbound Token Identity Provider for ZK-KYC"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = "=25.0.0"
+
+[dev-dependencies]
+soroban-sdk = { version = "=25.0.0", features = ["testutils"] }
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = false
+strip = "symbols"
+panic = "abort"
+codegen-units = 1
+lto = true

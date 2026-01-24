@@ -1,11 +1,14 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { Shield, CheckCircle, Globe, TrendingUp, DollarSign, Clock, Loader2 } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
+import { Card } from '@/components/ui/Card'
+import { identityContract } from '@/lib/contract'
 import { useKycStatus } from '@/lib/hooks/useKycStatus'
-import { useWallet } from '@/lib/store'
+import { useToast, useWallet } from '@/lib/store'
+import { LogInWithAnonAadhaar, useAnonAadhaar } from '@anon-aadhaar/react'
+import { motion } from 'framer-motion'
+import { BadgeCheck, CheckCircle, Clock, DollarSign, Fingerprint, Globe, Loader2, Shield, Sparkles, TrendingUp } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 const jurisdictionMap: { [key: string]: { name: string; flag: string } } = {
     'US': { name: 'United States', flag: '🇺🇸' },
@@ -16,7 +19,124 @@ const jurisdictionMap: { [key: string]: { name: string; flag: string } } = {
 
 export default function CompliancePage() {
     const { publicKey } = useWallet()
+    const { addToast } = useToast()
     const { kycStatus, isLoading } = useKycStatus()
+    
+    // Anon Aadhaar hook
+    const [anonAadhaar] = useAnonAadhaar()
+    
+    // SBT verification state
+    const [hasSBT, setHasSBT] = useState(false)
+    const [isCheckingSBT, setIsCheckingSBT] = useState(false)
+    const [isSubmittingToRelayer, setIsSubmittingToRelayer] = useState(false)
+    const [relayerError, setRelayerError] = useState<string | null>(null)
+    
+    // Track if we've already submitted this proof to prevent duplicates
+    const submittedProofRef = useRef<string | null>(null)
+
+    // Check SBT status
+    const checkSBTStatus = useCallback(async () => {
+        if (!publicKey) {
+            setHasSBT(false)
+            return
+        }
+        setIsCheckingSBT(true)
+        try {
+            const status = await identityContract.checkSBT(publicKey)
+            setHasSBT(status)
+        } catch (err) {
+            console.error('Failed to check SBT status:', err)
+            setHasSBT(false)
+        } finally {
+            setIsCheckingSBT(false)
+        }
+    }, [publicKey])
+
+    useEffect(() => {
+        checkSBTStatus()
+    }, [checkSBTStatus])
+
+    // Submit proof to relayer API for on-chain verification
+    const submitToRelayer = useCallback(async (proof: unknown) => {
+        if (!publicKey) {
+            addToast('Please connect your wallet first', 'error')
+            return
+        }
+
+        // Prevent duplicate submissions
+        const proofHash = JSON.stringify(proof).slice(0, 100)
+        if (submittedProofRef.current === proofHash) {
+            console.log('Proof already submitted, skipping...')
+            return
+        }
+        submittedProofRef.current = proofHash
+
+        setIsSubmittingToRelayer(true)
+        setRelayerError(null)
+
+        try {
+            console.log('Submitting proof to relayer...')
+            
+            const response = await fetch('/api/verify-aadhaar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    proof: proof,
+                    userAddress: publicKey,
+                }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Relayer verification failed')
+            }
+
+            console.log('Relayer response:', data)
+            addToast('🎉 ZK-Identity Verified! Your SBT has been minted on-chain.', 'success')
+            
+            // Refresh SBT status
+            await checkSBTStatus()
+
+        } catch (err) {
+            console.error('Relayer submission failed:', err)
+            const errorMessage = err instanceof Error ? err.message : 'Verification failed'
+            setRelayerError(errorMessage)
+            addToast(errorMessage, 'error')
+            // Reset submission tracking so user can retry
+            submittedProofRef.current = null
+        } finally {
+            setIsSubmittingToRelayer(false)
+        }
+    }, [publicKey, addToast, checkSBTStatus])
+
+    // Listen for Anon Aadhaar login success and submit to relayer
+    // Note: anonAadhaarProofs is keyed by nullifierSeed (1234567890 as used in LogInWithAnonAadhaar)
+    const NULLIFIER_SEED = 1234567890
+    const currentProof = anonAadhaar.status === 'logged-in' ? anonAadhaar.anonAadhaarProofs?.[NULLIFIER_SEED] : null
+    
+    useEffect(() => {
+        if (
+            anonAadhaar.status === 'logged-in' && 
+            !hasSBT && 
+            publicKey && 
+            !isSubmittingToRelayer &&
+            currentProof
+        ) {
+            addToast('ZK Proof generated! Submitting to relayer...', 'info')
+            submitToRelayer(currentProof)
+        }
+    }, [anonAadhaar.status, currentProof, hasSBT, publicKey, isSubmittingToRelayer, addToast, submitToRelayer])
+
+    // Reset error when user logs out
+    useEffect(() => {
+        if (anonAadhaar.status === 'logged-out') {
+            setRelayerError(null)
+            submittedProofRef.current = null
+        }
+    }, [anonAadhaar.status])
 
     if (!publicKey) {
         return (
@@ -34,6 +154,10 @@ export default function CompliancePage() {
     const investorType = kycStatus?.investor_status || 'Retail'
     const jurisdictions = kycStatus?.jurisdictions || []
 
+    // Determine UI state based on Anon Aadhaar status
+    const isLoggingIn = anonAadhaar.status === 'logging-in'
+    const isVerificationInProgress = isLoggingIn || isSubmittingToRelayer
+
     return (
         <div className="max-w-5xl">
             <div className="mb-8">
@@ -41,10 +165,97 @@ export default function CompliancePage() {
                 <p className="text-brown-400">Your KYC status and transfer restrictions</p>
             </div>
 
+            {/* ZK Identity Verification Section */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8"
+            >
+                <Card padding="lg" className={hasSBT ? 'border-2 border-success/30 bg-success/5' : ''}>
+                    <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-4">
+                            <div className={`p-3 rounded-xl ${hasSBT ? 'bg-success/20' : 'bg-brown-100'}`}>
+                                {hasSBT ? (
+                                    <BadgeCheck className="w-8 h-8 text-success" />
+                                ) : isVerificationInProgress ? (
+                                    <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                                ) : (
+                                    <Fingerprint className="w-8 h-8 text-brown-400" />
+                                )}
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="text-lg font-semibold text-brown-800">
+                                        ZK-Identity Verification
+                                    </h3>
+                                    {isCheckingSBT && (
+                                        <Loader2 className="w-4 h-4 animate-spin text-brown-400" />
+                                    )}
+                                </div>
+                                <p className="text-sm text-brown-400 mb-3">
+                                    Privacy-preserving KYC via Anon Aadhaar ZK Proofs
+                                </p>
+                                
+                                {hasSBT ? (
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="success" className="text-base px-4 py-1.5">
+                                            <Sparkles className="w-4 h-4 mr-2" />
+                                            ZK-Identity Verified ✅
+                                        </Badge>
+                                    </div>
+                                ) : isVerificationInProgress ? (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-indigo-600">
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            <span className="text-sm font-medium">
+                                                {isLoggingIn 
+                                                    ? 'Generating ZK Proof...' 
+                                                    : 'Verifying Proof & Minting SBT...'}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-brown-300">
+                                            {isLoggingIn 
+                                                ? 'Generating zero-knowledge proof from your Aadhaar QR'
+                                                : 'Relayer is verifying your proof and minting your SBT on Stellar'}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        <p className="text-xs text-brown-300">
+                                            Scan your Aadhaar QR code to generate a ZK proof. The relayer will verify and mint your identity SBT.
+                                        </p>
+                                        
+                                        {relayerError && (
+                                            <div className="p-2 rounded bg-error/10 border border-error/20">
+                                                <p className="text-xs text-error">{relayerError}</p>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Real Anon Aadhaar Login Button */}
+                                        <div className="anon-aadhaar-wrapper">
+                                            <LogInWithAnonAadhaar nullifierSeed={1234567890} />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        
+                        {/* Anon Aadhaar Branding */}
+                        <div className="hidden md:flex items-center gap-2 bg-gradient-to-br from-orange-50 to-green-50 px-3 py-2 rounded-lg border border-orange-200">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-green-500 flex items-center justify-center">
+                                <span className="text-white text-xs font-bold">A</span>
+                            </div>
+                            <span className="text-xs text-brown-600 font-medium">Powered by<br/>Anon Aadhaar</span>
+                        </div>
+                    </div>
+                </Card>
+            </motion.div>
+
             {/* KYC Status Card */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
                 className="mb-8"
             >
                 <Card variant="gradient" padding="lg">
@@ -58,7 +269,7 @@ export default function CompliancePage() {
                             <div>
                                 <div className="flex items-center gap-2 text-white/70 text-sm mb-2">
                                     <Shield className="w-4 h-4" />
-                                    <span>KYC Status</span>
+                                    <span>Traditional KYC Status</span>
                                 </div>
                                 <h2 className="text-3xl font-bold mb-2">
                                     {verified ? 'Verified ✓' : 'Not Verified'}
@@ -96,7 +307,7 @@ export default function CompliancePage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
+                    transition={{ delay: 0.2 }}
                 >
                     <Card>
                         <div className="flex items-center gap-3 mb-4">
@@ -127,7 +338,7 @@ export default function CompliancePage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
+                    transition={{ delay: 0.3 }}
                 >
                     <Card>
                         <div className="flex items-center gap-3 mb-4">
@@ -163,7 +374,7 @@ export default function CompliancePage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
+                    transition={{ delay: 0.4 }}
                 >
                     <Card>
                         <div className="flex items-center gap-3 mb-4">
@@ -203,7 +414,7 @@ export default function CompliancePage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
+                    transition={{ delay: 0.5 }}
                 >
                     <Card>
                         <div className="flex items-center gap-3 mb-4">
@@ -244,15 +455,15 @@ export default function CompliancePage() {
             </div>
 
             {/* Status Message */}
-            {!verified && !isLoading && (
+            {!verified && !hasSBT && !isLoading && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
+                    transition={{ delay: 0.6 }}
                     className="p-4 rounded-lg bg-warning/10 border border-warning/20"
                 >
                     <p className="text-sm text-warning font-medium">
-                        ⚠️ Your account is not KYC verified. Contact a governor to update your compliance status.
+                        ⚠️ Complete ZK-Identity verification above to unlock token transfers.
                     </p>
                 </motion.div>
             )}

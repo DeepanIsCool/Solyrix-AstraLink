@@ -2,6 +2,7 @@ import * as StellarSDK from '@stellar/stellar-sdk'
 
 // Contract Configuration
 export const CONTRACT_ID = 'CBEHEOVOYODO7D62TFMNMI6EVK6NOLH7MLLUHNKWRGDZATP356YSHQL3'
+export const IDENTITY_CONTRACT_ID = 'CD5ZWBKB4H3HV63Z5TVDOMRNBIQNCUWONHXP5AEDUN52MAPXEIRJNJYH'
 export const NETWORK_PASSPHRASE = StellarSDK.Networks.TESTNET
 export const RPC_URL = 'https://soroban-testnet.stellar.org'
 
@@ -41,7 +42,17 @@ export async function simulateTransaction(transaction: any) {
             simulated
         ).build()
     } else {
-        throw new Error('Simulation failed')
+        // Extract error details from the simulation response
+        let errorMessage = 'Simulation failed'
+
+        if (StellarSDK.rpc.Api.isSimulationError(simulated)) {
+            errorMessage = simulated.error || 'Unknown simulation error'
+        } else if (StellarSDK.rpc.Api.isSimulationRestore(simulated)) {
+            errorMessage = 'Simulation requires ledger entry restoration - contract state may have expired'
+        }
+
+        console.error('Simulation failed with details:', simulated)
+        throw new Error(errorMessage)
     }
 }
 
@@ -114,18 +125,24 @@ export const contract = {
         throw new Error('Failed to fetch balance')
     },
 
-    getKycStatus: async (address: string): Promise<any> => {
-        const contract = new StellarSDK.Contract(CONTRACT_ID)
-        const addressScVal = StellarSDK.nativeToScVal(address, { type: 'address' })
-        const operation = contract.call('get_kyc_status', addressScVal)
+    getKycStatus: async (address: string): Promise<any | null> => {
+        try {
+            const contract = new StellarSDK.Contract(CONTRACT_ID)
+            const addressScVal = StellarSDK.nativeToScVal(address, { type: 'address' })
+            const operation = contract.call('get_kyc_status', addressScVal)
 
-        const tx = await buildTransaction(SIMULATION_ACCOUNT, operation)
-        const simulated = await server.simulateTransaction(tx)
+            const tx = await buildTransaction(SIMULATION_ACCOUNT, operation)
+            const simulated = await server.simulateTransaction(tx)
 
-        if (StellarSDK.rpc.Api.isSimulationSuccess(simulated)) {
-            return StellarSDK.scValToNative(simulated.result!.retval)
+            if (StellarSDK.rpc.Api.isSimulationSuccess(simulated)) {
+                return StellarSDK.scValToNative(simulated.result!.retval)
+            }
+            // No KYC record exists for this address
+            return null
+        } catch {
+            // Contract call failed - likely no KYC record
+            return null
         }
-        throw new Error('Failed to fetch KYC status')
     },
 
     isFrozen: async (address: string): Promise<boolean> => {
@@ -380,4 +397,119 @@ export function parseTokenAmount(amount: string, decimals: number = 6): bigint {
     const paddedFraction = fraction.padEnd(decimals, '0').slice(0, decimals)
     const combined = whole + paddedFraction
     return BigInt(combined)
+}
+
+// ============ IDENTITY SBT CONTRACT ============
+
+// Identity contract read operations
+export const identityContract = {
+    // Check if user has a valid SBT (Soulbound Token)
+    checkSBT: async (user: string): Promise<boolean> => {
+        try {
+            const contract = new StellarSDK.Contract(IDENTITY_CONTRACT_ID)
+            const userScVal = StellarSDK.nativeToScVal(user, { type: 'address' })
+            const operation = contract.call('has_sbt', userScVal)
+
+            const tx = await buildTransaction(SIMULATION_ACCOUNT, operation)
+            const simulated = await server.simulateTransaction(tx)
+
+            if (StellarSDK.rpc.Api.isSimulationSuccess(simulated)) {
+                return StellarSDK.scValToNative(simulated.result!.retval)
+            }
+            return false
+        } catch {
+            // Contract not deployed or call failed
+            return false
+        }
+    },
+
+    // Get admin address
+    getAdmin: async (): Promise<string | null> => {
+        try {
+            const contract = new StellarSDK.Contract(IDENTITY_CONTRACT_ID)
+            const operation = contract.call('get_admin')
+
+            const tx = await buildTransaction(SIMULATION_ACCOUNT, operation)
+            const simulated = await server.simulateTransaction(tx)
+
+            if (StellarSDK.rpc.Api.isSimulationSuccess(simulated)) {
+                return StellarSDK.scValToNative(simulated.result!.retval)
+            }
+            return null
+        } catch {
+            return null
+        }
+    },
+}
+
+// Identity contract write operations (require signature)
+export const writeIdentityContract = {
+    // Verify a user (issue SBT) - requires admin signature
+    verifyUser: async (admin: string, userToVerify: string) => {
+        const contract = new StellarSDK.Contract(IDENTITY_CONTRACT_ID)
+
+        const operation = contract.call(
+            'verify_user',
+            StellarSDK.nativeToScVal(userToVerify, { type: 'address' })
+        )
+
+        const sourceAccount = await server.getAccount(admin)
+        const tx = new StellarSDK.TransactionBuilder(sourceAccount, {
+            fee: StellarSDK.BASE_FEE,
+            networkPassphrase: NETWORK_PASSPHRASE,
+        })
+            .addOperation(operation)
+            .setTimeout(30)
+            .build()
+
+        const prepared = await simulateTransaction(tx)
+
+        return prepared.toXDR()
+    },
+
+    // Revoke a user's SBT - requires admin signature
+    revokeUser: async (admin: string, userToRevoke: string) => {
+        const contract = new StellarSDK.Contract(IDENTITY_CONTRACT_ID)
+
+        const operation = contract.call(
+            'revoke_user',
+            StellarSDK.nativeToScVal(userToRevoke, { type: 'address' })
+        )
+
+        const sourceAccount = await server.getAccount(admin)
+        const tx = new StellarSDK.TransactionBuilder(sourceAccount, {
+            fee: StellarSDK.BASE_FEE,
+            networkPassphrase: NETWORK_PASSPHRASE,
+        })
+            .addOperation(operation)
+            .setTimeout(30)
+            .build()
+
+        const prepared = await simulateTransaction(tx)
+
+        return prepared.toXDR()
+    },
+
+    // Initialize identity contract - requires admin signature
+    initialize: async (admin: string) => {
+        const contract = new StellarSDK.Contract(IDENTITY_CONTRACT_ID)
+
+        const operation = contract.call(
+            'initialize',
+            StellarSDK.nativeToScVal(admin, { type: 'address' })
+        )
+
+        const sourceAccount = await server.getAccount(admin)
+        const tx = new StellarSDK.TransactionBuilder(sourceAccount, {
+            fee: StellarSDK.BASE_FEE,
+            networkPassphrase: NETWORK_PASSPHRASE,
+        })
+            .addOperation(operation)
+            .setTimeout(30)
+            .build()
+
+        const prepared = await simulateTransaction(tx)
+
+        return prepared.toXDR()
+    },
 }

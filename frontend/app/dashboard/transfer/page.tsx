@@ -1,19 +1,19 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Send, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
-import { Button } from '@/components/ui/Button'
-import { useWallet, useToast } from '@/lib/store'
-import { writeContract, parseTokenAmount } from '@/lib/contract'
+import { contract, parseTokenAmount, writeContract } from '@/lib/contract'
+import { useToast, useWallet } from '@/lib/store'
 import { signTransaction } from '@stellar/freighter-api'
 import * as StellarSDK from '@stellar/stellar-sdk'
+import { AnimatePresence, motion } from 'framer-motion'
+import { AlertCircle, CheckCircle, Loader2, Send, XCircle } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 
 interface ComplianceCheck {
     name: string
-    status: 'pass' | 'fail' | 'pending'
+    status: 'pass' | 'fail' | 'pending' | 'loading'
     detail: string
 }
 
@@ -25,15 +25,97 @@ export default function TransferPage() {
     const [amount, setAmount] = useState('')
     const [isPreview, setIsPreview] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    
+    // Real KYC status from blockchain
+    const [senderKyc, setSenderKyc] = useState<any | null>(null)
+    const [recipientKyc, setRecipientKyc] = useState<any | null>(null)
+    const [senderBalance, setSenderBalance] = useState<bigint>(BigInt(0))
+    const [isLoadingKyc, setIsLoadingKyc] = useState(false)
 
-    // Simulated compliance checks - would be real validation in production
+    // Validate sender KYC on mount and when wallet changes
+    useEffect(() => {
+        async function checkSenderKyc() {
+            if (!publicKey) {
+                setSenderKyc(null)
+                setSenderBalance(BigInt(0))
+                return
+            }
+            try {
+                const [kyc, balance] = await Promise.all([
+                    contract.getKycStatus(publicKey),
+                    contract.balance(publicKey)
+                ])
+                setSenderKyc(kyc)
+                setSenderBalance(balance)
+            } catch (err) {
+                console.error('Failed to fetch sender status:', err)
+                setSenderKyc(null)
+            }
+        }
+        checkSenderKyc()
+    }, [publicKey])
+
+    // Validate recipient KYC when address changes (debounced)
+    const checkRecipientKyc = useCallback(async (address: string) => {
+        if (address.length !== 56) {
+            setRecipientKyc(null)
+            return
+        }
+        setIsLoadingKyc(true)
+        try {
+            const kyc = await contract.getKycStatus(address)
+            setRecipientKyc(kyc)
+        } catch (err) {
+            console.error('Failed to fetch recipient KYC:', err)
+            setRecipientKyc(null)
+        } finally {
+            setIsLoadingKyc(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (recipient.length === 56) {
+                checkRecipientKyc(recipient)
+            } else {
+                setRecipientKyc(null)
+            }
+        }, 500) // Debounce 500ms
+        return () => clearTimeout(timer)
+    }, [recipient, checkRecipientKyc])
+
+    // Build real compliance checks based on blockchain data
     const complianceChecks: ComplianceCheck[] = [
-        { name: 'Wallet Connected', status: publicKey ? 'pass' : 'fail', detail: publicKey ? 'Freighter wallet connected' : 'Connect wallet first' },
-        { name: 'Valid Recipient', status: recipient.length === 56 ? 'pass' : 'pending', detail: recipient ? 'Address format valid' : 'Enter recipient address' },
-        { name: 'Amount Validation', status: amount && parseFloat(amount) > 0 ? 'pass' : 'pending', detail: amount ? `${amount} MTT` : 'Enter amount' },
-        { name: 'KYC Verified', status: 'pass', detail: 'Both parties verified (demo)' },
-        { name: 'Holding Period', status: 'pass', detail: '0/90 days (Demo mode)' },
-        { name: 'Ownership Limit', status: 'pass', detail: 'Within 10% limit' },
+        { 
+            name: 'Wallet Connected', 
+            status: publicKey ? 'pass' : 'fail', 
+            detail: publicKey ? 'Freighter wallet connected' : 'Connect wallet first' 
+        },
+        { 
+            name: 'Sender KYC Verified', 
+            status: senderKyc?.kyc_verified ? 'pass' : (publicKey ? 'fail' : 'pending'),
+            detail: senderKyc?.kyc_verified ? `Status: ${senderKyc.investor_status}` : 'Your account requires KYC verification'
+        },
+        { 
+            name: 'Valid Recipient Address', 
+            status: recipient.length === 56 ? 'pass' : 'pending', 
+            detail: recipient ? (recipient.length === 56 ? 'Stellar address valid' : 'Invalid address length') : 'Enter recipient address' 
+        },
+        { 
+            name: 'Recipient KYC Verified', 
+            status: isLoadingKyc ? 'loading' : (recipientKyc?.kyc_verified ? 'pass' : (recipient.length === 56 ? 'fail' : 'pending')),
+            detail: isLoadingKyc ? 'Checking...' : (recipientKyc?.kyc_verified ? `Status: ${recipientKyc.investor_status}` : (recipient.length === 56 ? 'Recipient requires KYC verification' : 'Enter recipient address'))
+        },
+        { 
+            name: 'Amount Validation', 
+            status: amount && parseFloat(amount) > 0 ? 'pass' : 'pending', 
+            detail: amount ? `${amount} MTT` : 'Enter amount' 
+        },
+        { 
+            name: 'Sufficient Balance', 
+            status: amount && parseFloat(amount) > 0 && senderBalance >= parseTokenAmount(amount || '0', 6) ? 'pass' : (amount ? 'fail' : 'pending'),
+            detail: `Balance: ${Number(senderBalance) / 1_000_000} MTT`
+        },
     ]
 
     const allChecksPassed = complianceChecks.every(check => check.status === 'pass')
@@ -41,6 +123,14 @@ export default function TransferPage() {
     const handlePreview = () => {
         if (!recipient || !amount) {
             addToast('Please fill in all fields', 'warning')
+            return
+        }
+        if (!senderKyc?.kyc_verified) {
+            addToast('Your account requires KYC verification', 'error')
+            return
+        }
+        if (recipient.length === 56 && !recipientKyc?.kyc_verified) {
+            addToast('Recipient requires KYC verification before receiving tokens', 'error')
             return
         }
         setIsPreview(true)
@@ -88,6 +178,7 @@ export default function TransferPage() {
             setIsSubmitting(false)
         }
     }
+
 
     return (
         <div className="max-w-6xl">
@@ -174,6 +265,8 @@ export default function TransferPage() {
                                                     <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
                                                 ) : check.status === 'fail' ? (
                                                     <XCircle className="w-5 h-5 text-error flex-shrink-0 mt-0.5" />
+                                                ) : check.status === 'loading' ? (
+                                                    <Loader2 className="w-5 h-5 text-brown-400 flex-shrink-0 mt-0.5 animate-spin" />
                                                 ) : (
                                                     <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
                                                 )}
