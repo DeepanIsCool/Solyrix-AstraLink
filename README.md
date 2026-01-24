@@ -30,7 +30,7 @@ AstraLink democratizes access to $16 trillion in illiquid assets by reducing tok
 ## 🏗️ Architecture
 
 ```
-contracts/hello-world/src/
+contracts/rwa-token/src/
 ├── lib.rs          # Main contract (381 lines)
 ├── types.rs        # Data structures (102 lines)
 ├── errors.rs       # 40+ error codes
@@ -73,7 +73,7 @@ git clone https://github.com/shinjinihehe/Solyrix-AstraLink-.git
 cd Solyrix-AstraLink-
 
 # Build the contract (this generates the target/ folder)
-cd contracts/hello-world
+cd contracts/rwa-token
 stellar contract build
 ```
 

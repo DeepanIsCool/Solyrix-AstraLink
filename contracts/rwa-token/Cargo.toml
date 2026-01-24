@@ -1,6 +1,7 @@
 [package]
-name = "rwa-token"
-version = "0.1.0"
+name = "astralink-rwa-token"
+version = "1.0.0"
+authors = ["AstraLink Team"]
 description = "Stellar RWA Token Factory"
 edition = "2021"
 
