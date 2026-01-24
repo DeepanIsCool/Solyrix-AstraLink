@@ -51,31 +51,70 @@ contracts/hello-world/src/
 | **Jurisdictions Supported** | 4 |
 | **Tests** | 28 |
 
-## 🛠️ Installation
+## 🛠️ Quick Start
 
 ### Prerequisites
 ```bash
-rustc --version  # 1.70+
-stellar --version  # Latest Stellar CLI
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Install Stellar CLI
+cargo install --locked stellar-cli --features opt
+
+# Verify installations
+rustc --version  # Should be 1.70+
+stellar --version  # Should be latest
 ```
 
-### Build
+### Clone and Build
 ```bash
+# Clone the repository
+git clone https://github.com/shinjinihehe/Solyrix-AstraLink-.git
+cd Solyrix-AstraLink-
+
+# Build the contract (this generates the target/ folder)
 cd contracts/hello-world
 stellar contract build
 ```
 
-### Test
+**Output:** WASM file will be at `target/wasm32v1-none/release/rwa_token.wasm` (23.7 KB)
+
+### Run Tests
 ```bash
 cargo test
 ```
 
-### Deploy
+### Deploy to Testnet
 ```bash
+# Generate governor accounts
+stellar keys generate gov1 --network testnet
+stellar keys generate gov2 --network testnet
+stellar keys generate gov3 --network testnet
+
+# Fund accounts
+curl "https://friendbot.stellar.org?addr=$(stellar keys address gov1)"
+curl "https://friendbot.stellar.org?addr=$(stellar keys address gov2)"
+curl "https://friendbot.stellar.org?addr=$(stellar keys address gov3)"
+
+# Deploy contract
 stellar contract deploy \
   --wasm target/wasm32v1-none/release/rwa_token.wasm \
   --network testnet \
-  --source YOUR_KEY
+  --source gov1
+
+# Initialize (use the CONTRACT_ID from deploy output)
+stellar contract invoke \
+  --id YOUR_CONTRACT_ID \
+  --network testnet \
+  --source gov1 \
+  -- \
+  initialize \
+  --governors '["GOV1_ADDR","GOV2_ADDR","GOV3_ADDR"]' \
+  --name "Your Token Name" \
+  --symbol "TKN" \
+  --decimals 6 \
+  --asset_type "REAL_ESTATE" \
+  --initial_supply "10000000000000"
 ```
 
 ## 🎯 Use Cases
