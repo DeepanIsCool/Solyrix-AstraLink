@@ -1,0 +1,41 @@
+# Rust/Cargo
+target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# Soroban
+.soroban/
+*.wasm
+test_snapshots/
+
+# Stellar CLI
+.stellar/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Gemini/Antigravity (personal artifacts)
+.gemini/
+
+# Environment variables
+.env
+.env.local
+
+# Node modules (if you add frontend later)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build artifacts
+dist/
+build/
+
+# Temporary files
+*.tmp
+*.log

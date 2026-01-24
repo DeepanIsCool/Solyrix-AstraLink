@@ -1,0 +1,23 @@
+[package]
+name = "rwa-token"
+version = "0.1.0"
+description = "Stellar RWA Token Factory"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = "=25.0.0"  # Use the latest stable version
+
+[dev-dependencies]
+soroban-sdk = { version = "=25.0.0", features = ["testutils"] }
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = false
+strip = "symbols"
+panic = "abort"
+codegen-units = 1
+lto = true
