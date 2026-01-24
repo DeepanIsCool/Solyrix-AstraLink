@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Premium cream/brown color system */
+    --background: 48 44% 96%;
+    /* cream-100 */
+    --foreground: 30 31% 11%;
+    /* brown-800 */
+
+    --card: 0 0% 100%;
+    --card-foreground: 30 31% 11%;
+
+    --primary: 30 26% 37%;
+    /* brown-500 */
+    --primary-foreground: 48 44% 96%;
+
+    --secondary: 30 17% 90%;
+    /* brown-50 */
+    --secondary-foreground: 30 26% 37%;
+
+    --accent: 40 28% 62%;
+    /* gold */
+    --accent-foreground: 30 31% 11%;
+
+    --muted: 30 31% 91%;
+    /* cream-200 */
+    --muted-foreground: 30 18% 55%;
+
+    --border: 30 21% 77%;
+    /* brown-200 */
+    --input: 30 21% 77%;
+    --ring: 30 26% 37%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(30 21% 77%);
+  }
+
+  body {
+    background-color: hsl(48 44% 96%);
+    /* cream-100 */
+    color: hsl(30 31% 11%);
+    /* brown-800 */
+    font-family: var(--font-geist-sans);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: hsl(30 31% 11%);
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .glass {
+    background-color: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsla(30, 17%, 90%, 0.5);
+  }
+
+  .card-premium {
+    background-color: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(122, 94, 69, 0.07);
+    border: 1px solid hsl(30 17% 90%);
+  }
+}
