@@ -25,7 +25,7 @@ mod storage;
 pub use types::*;
 pub use errors::*;
 
-use soroban_sdk::{contract, contractimpl, Env, Address, String, Vec, Symbol, Val, vec};
+use soroban_sdk::{contract, contractimpl, Env, Address, String, Vec, Symbol, Val, vec, token};
 
 #[contract]
 pub struct RWAToken;
@@ -86,6 +86,7 @@ impl RWAToken {
             ],
             require_accreditation: true,          // Reg D compliant
             daily_transfer_limit: 100_000_000000, // $100k
+            identity_contract: None,              // Use local KYC by default, set via set_identity_contract()
         };
         compliance::set_transfer_restrictions(&env, &restrictions);
         
@@ -347,6 +348,114 @@ impl RWAToken {
         governance::approve_proposal(&env, &governor, proposal_id)
     }
     
+    // ============ IDENTITY CONFIGURATION ============
+    
+    /// Set the identity contract for SBT verification (requires multi-sig)
+    /// 
+    /// This enables cross-contract KYC via external Identity SBT providers
+    /// like Anon Aadhaar. When set, transfers will call identity_contract.has_sbt()
+    /// instead of checking local kyc_verified flags.
+    pub fn set_identity_contract(
+        env: Env,
+        governor: Address,
+        identity_contract: Address,
+    ) -> Result<(), RWAError> {
+        governor.require_auth();
+        governance::require_multisig_approval(&env, &governor)?;
+        
+        let mut restrictions = compliance::get_transfer_restrictions(&env);
+        restrictions.identity_contract = Some(identity_contract);
+        compliance::set_transfer_restrictions(&env, &restrictions);
+        
+        Ok(())
+    }
+    
+    // ============ YIELD STREAMING ============
+    
+    /// Deposit yield (rent/dividends) for token holders to claim
+    /// 
+    /// # Arguments
+    /// * `admin` - Governor address (requires multi-sig)
+    /// * `token` - The yield token address (e.g., USDC)
+    /// * `amount` - Amount of yield to distribute (decimals match token)
+    /// 
+    /// The yield is distributed proportionally based on token holdings.
+    /// Uses a cumulative index pattern for gas-efficient distribution.
+    pub fn deposit_yield(
+        env: Env,
+        admin: Address,
+        token: Address,
+        amount: i128,
+    ) -> Result<(), RWAError> {
+        admin.require_auth();
+        governance::require_multisig_approval(&env, &admin)?;
+        
+        if amount <= 0 {
+            return Err(RWAError::InvalidAmount);
+        }
+        
+        let total_supply = Self::total_supply(env.clone());
+        if total_supply == 0 {
+            return Err(RWAError::InvalidSupply);
+        }
+        
+        // Store yield token if first deposit
+        if storage::get_yield_token(&env).is_none() {
+            storage::set_yield_token(&env, &token);
+        }
+        
+        // Transfer yield tokens from admin to contract
+        let contract_address = env.current_contract_address();
+        let token_client = token::TokenClient::new(&env, &token);
+        token_client.transfer(&admin, &contract_address, &amount);
+        
+        // Calculate yield per share (scaled by 1e12 for precision)
+        // yield_per_share = amount * 1e12 / total_supply
+        let precision: i128 = 1_000_000_000_000; // 1e12
+        let yield_per_share = (amount * precision) / total_supply;
+        
+        // Update cumulative yield index
+        let current_index = storage::get_cumulative_yield_index(&env);
+        storage::set_cumulative_yield_index(&env, current_index + yield_per_share);
+        
+        Ok(())
+    }
+    
+    /// Claim accumulated yield for a user
+    /// 
+    /// # Returns
+    /// The amount of yield tokens transferred to the user
+    pub fn claim_yield(
+        env: Env,
+        user: Address,
+    ) -> Result<i128, RWAError> {
+        user.require_auth();
+        
+        let yield_token = storage::get_yield_token(&env)
+            .ok_or(RWAError::InvalidAmount)?; // No yield deposited yet
+        
+        let user_balance = storage::get_balance(&env, &user);
+        let global_index = storage::get_cumulative_yield_index(&env);
+        let user_index = storage::get_user_yield_index(&env, &user);
+        
+        // Calculate owed: balance * (global_index - user_index) / 1e12
+        let precision: i128 = 1_000_000_000_000; // 1e12
+        let owed = (user_balance * (global_index - user_index)) / precision;
+        
+        if owed <= 0 {
+            return Ok(0);
+        }
+        
+        // Update user's claimed index BEFORE transfer (reentrancy protection)
+        storage::set_user_yield_index(&env, &user, global_index);
+        
+        // Transfer yield to user
+        let token_client = token::TokenClient::new(&env, &yield_token);
+        token_client.transfer(&env.current_contract_address(), &user, &owed);
+        
+        Ok(owed)
+    }
+    
     // ============ VIEW FUNCTIONS ============
     
     pub fn name(env: Env) -> String {
@@ -375,6 +484,16 @@ impl RWAToken {
     
     pub fn get_proposal(env: Env, proposal_id: u32) -> Result<Proposal, RWAError> {
         governance::get_proposal(&env, proposal_id)
+    }
+    
+    /// View pending yield for a user (read-only)
+    pub fn pending_yield(env: Env, user: Address) -> i128 {
+        let user_balance = storage::get_balance(&env, &user);
+        let global_index = storage::get_cumulative_yield_index(&env);
+        let user_index = storage::get_user_yield_index(&env, &user);
+        
+        let precision: i128 = 1_000_000_000_000;
+        (user_balance * (global_index - user_index)) / precision
     }
 }
 

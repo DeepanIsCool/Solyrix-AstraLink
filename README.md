@@ -1,204 +1,159 @@
-# AstraLink RWA Factory
+# AstraLink RWA Factory 🏭
 
-**"Shopify for Asset Tokenization"** - A self-service platform for tokenizing real-world assets on Stellar blockchain.
+> **"Shopify for Asset Tokenization"** — A production-grade platform for tokenizing real-world assets on the Stellar network with built-in compliance, identity, and yield streaming.
 
-[![Stellar](https://img.shields.io/badge/Stellar-Testnet-blue)](https://stellar.org)
-[![Soroban](https://img.shields.io/badge/Soroban-v25.0.0-green)](https://soroban.stellar.org)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-
-## 🚀 Live on Stellar Testnet
-
-**Contract ID:** `CBYZE6XD6NXCS3SMRI7PQWFJKJUB4WVMHC5ZWICAPPHP3LIYYKCN7IGE`
-
-- [View on Stellar Lab](https://lab.stellar.org/r/testnet/contract/CBYZE6XD6NXCS3SMRI7PQWFJKJUB4WVMHC5ZWICAPPHP3LIYYKCN7IGE)
-- [Deploy Transaction](https://stellar.expert/explorer/testnet/tx/128edb0b27ad59e3f38f70dc65b9264458045ad231a0508275619a2735ecf574)
-
-## 📋 Overview
-
-AstraLink democratizes access to $16 trillion in illiquid assets by reducing tokenization time from **6+ months to weeks** and costs by **90%**.
-
-### Key Features
-
-✅ **SEP-41 Compliant Token** - Full Stellar token standard implementation  
-✅ **2-of-3 Multi-Sig Governance** - Institutional-grade security from day 1  
-✅ **11-Step Compliance Engine** - Automated KYC/AML verification  
-✅ **Multi-Jurisdiction Support** - US (Reg D/S), Singapore (VCC), EU (MiCA), UAE (SCA)  
-✅ **Transfer Restrictions** - 90-day holding period, 10% ownership limit, $100k daily cap  
-✅ **Emergency Controls** - Account freeze/unfreeze capabilities  
-✅ **Complete Audit Trail** - Immutable transaction logging  
-
-## 🏗️ Architecture
-
-```
-contracts/rwa-token/src/
-├── lib.rs          # Main contract (381 lines)
-├── types.rs        # Data structures (102 lines)
-├── errors.rs       # 40+ error codes
-├── events.rs       # Event emissions
-├── storage.rs      # Storage layer
-├── compliance.rs   # 11-step verification engine
-├── governance.rs   # Multi-sig system
-└── test.rs         # 28 comprehensive tests
-```
-
-## 📊 Contract Stats
-
-| Metric | Value |
-|--------|-------|
-| **WASM Size** | 23.7 KB |
-| **Exported Functions** | 20 |
-| **Total Supply** | 10,000,000 MTT |
-| **Jurisdictions Supported** | 4 |
-| **Tests** | 28 |
-
-## 🛠️ Quick Start
-
-### Prerequisites
-```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# Install Stellar CLI
-cargo install --locked stellar-cli --features opt
-
-# Verify installations
-rustc --version  # Should be 1.70+
-stellar --version  # Should be latest
-```
-
-### Clone and Build
-```bash
-# Clone the repository
-git clone https://github.com/shinjinihehe/Solyrix-AstraLink-.git
-cd Solyrix-AstraLink-
-
-# Build the contract (this generates the target/ folder)
-cd contracts/rwa-token
-stellar contract build
-```
-
-**Output:** WASM file will be at `target/wasm32v1-none/release/rwa_token.wasm` (23.7 KB)
-
-### Run Tests
-```bash
-cargo test
-```
-
-### Deploy to Testnet
-```bash
-# Generate governor accounts
-stellar keys generate gov1 --network testnet
-stellar keys generate gov2 --network testnet
-stellar keys generate gov3 --network testnet
-
-# Fund accounts
-curl "https://friendbot.stellar.org?addr=$(stellar keys address gov1)"
-curl "https://friendbot.stellar.org?addr=$(stellar keys address gov2)"
-curl "https://friendbot.stellar.org?addr=$(stellar keys address gov3)"
-
-# Deploy contract
-stellar contract deploy \
-  --wasm target/wasm32v1-none/release/rwa_token.wasm \
-  --network testnet \
-  --source gov1
-
-# Initialize (use the CONTRACT_ID from deploy output)
-stellar contract invoke \
-  --id YOUR_CONTRACT_ID \
-  --network testnet \
-  --source gov1 \
-  -- \
-  initialize \
-  --governors '["GOV1_ADDR","GOV2_ADDR","GOV3_ADDR"]' \
-  --name "Your Token Name" \
-  --symbol "TKN" \
-  --decimals 6 \
-  --asset_type "REAL_ESTATE" \
-  --initial_supply "10000000000000"
-```
-
-## 🎯 Use Cases
-
-- **Commercial Real Estate** - Tokenize properties with automatic compliance
-- **Private Equity Funds** - Fractional ownership with accredited investor controls
-- **Commodity Pools** - Global access with jurisdiction restrictions
-- **Art & Collectibles** - Provenance tracking with KYC requirements
-
-## 🔐 Security Features
-
-- 2-of-3 multi-signature for all critical operations
-- KYC/AML verification before every transfer
-- Accredited investor checks (Reg D compliant)
-- Holding period enforcement (90 days)
-- Ownership concentration limits (10% max)
-- Daily transfer caps ($100,000)
-- Emergency account freeze capability
-
-## 📚 API Functions
-
-### Core Token Operations
-- `transfer` - Compliance-gated token transfers
-- `balance` - Check token holdings
-- `approve` / `transfer_from` - Allowance system
-
-### Governance (Multi-Sig Protected)
-- `mint` / `burn` - Supply management
-- `freeze_account` / `unfreeze_account` - Emergency controls
-- `update_kyc` - Compliance record management
-
-### Multi-Sig Workflow
-- `propose` - Create governance proposals
-- `approve_proposal` - Vote on proposals
-- `get_proposal` - Query proposal status
-
-### View Functions
-- `name`, `symbol`, `decimals`, `total_supply`
-- `get_kyc_status` - Check compliance records
-- `is_frozen` - Check account status
-
-## 🌍 Multi-Jurisdiction Compliance
-
-| Jurisdiction | Regulation | Investor Types |
-|--------------|-----------|----------------|
-| 🇺🇸 USA | Reg D/S | Accredited |
-| 🇸🇬 Singapore | VCC | Qualified |
-| 🇪🇺 EU | MiCA | Institutional |
-| 🇦🇪 UAE | SCA | All Types |
-
-## 🚀 Roadmap
-
-- [x] **Phase 1:** Core Token & Compliance Engine ✅
-- [ ] **Phase 2:** Automated Dividend Distribution
-- [ ] **Phase 3:** Enhanced Governance & Voting
-- [ ] **Phase 4:** Secondary Market Integration
-- [ ] **Phase 5:** Regulatory Reporting Dashboard
-
-## 🎥 Demo
-
-```bash
-# Check token info
-stellar contract invoke \
-  --id CBYZE6XD6NXCS3SMRI7PQWFJKJUB4WVMHC5ZWICAPPHP3LIYYKCN7IGE \
-  --network testnet \
-  --source gov1 \
-  -- name
-# Returns: "Manhattan Tower Token"
-```
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details
-
-## 🤝 Contributing
-
-Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
-
-## 📞 Contact
-
-- **Project:** AstraLink RWA Factory
-- **Built with:** Stellar Soroban v25.0.0
-- **Deployed:** January 24, 2026
+[![Stellar](https://img.shields.io/badge/Stellar-Testnet-blue?style=for-the-badge&logo=stellar)](https://stellar.org)
+[![Soroban](https://img.shields.io/badge/Soroban-v25.0.0-green?style=for-the-badge)](https://soroban.stellar.org)
+[![Next.js](https://img.shields.io/badge/Frontend-Next.js-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
+[![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)](LICENSE)
 
 ---
 
-**Built on Stellar. Secured with Multi-Sig. Compliant across 4 Jurisdictions.**
+## 🚀 Live Demo
+
+**Contract ID:** `CBEHEOVOYODO7D62TFMNMI6EVK6NOLH7MLLUHNKWRGDZATP356YSHQL3`
+
+[View on Stellar Explorer](https://stellar.expert/explorer/testnet/contract/CBEHEOVOYODO7D62TFMNMI6EVK6NOLH7MLLUHNKWRGDZATP356YSHQL3)
+
+---
+
+## 🌟 Overview
+
+**AstraLink** solves the $16 trillion illiquid asset problem by providing a turn-key solution for asset managers to tokenize Real Estate, Private Equity, and Commodities. It combines institutional-grade compliance with DeFi composability.
+
+### 💎 Key Features
+
+#### 🛡️ Compliance & Identity
+- **Decoupled Identity (SBT)**: Integrates with external Soulbound Tokens (like Anon Aadhaar) for checking "Humanity" or Accreditation without storing PII on-chain.
+- **11-Step Compliance Engine**: Automated checks for KYC, AML, Accreditation, and Jurisdiction.
+- **Multi-Jurisdiction**: Pre-configured rules for US (Reg D/S), Singapore (VCC), EU (MiCA), and UAE.
+
+#### 💸 Yield Streaming
+- **Automated Distributions**: Admin can deposit yield (e.g., USDC rent), and the contract calculates proportional shares for all holders.
+- **Lazy Claiming**: Users claim yield in one click; no gas-heavy loops for distribution.
+- **Real-Time Tracking**: Holders see pending yield accumulate in real-time.
+
+#### 🔐 Security & Governance
+- **2-of-3 Multi-Sig**: ALL critical operations (Mint, Burn, Freeze, Config) require approval from 2 out of 3 governors.
+- **Emergency Controls**: Ability to freeze specific accounts or halt trading globally.
+- **Asset Protection**: 90-day holding periods and ownership concentration limits (10% max) to prevent market manipulation.
+
+---
+
+## 🏗️ Technical Architecture
+
+### Smart Contract (Rust/Soroban)
+The logic is modularized for security and upgradeability:
+
+```mermaid
+graph TD
+    User[User] -->|Transfer| Token[Lib.rs: RWA Token]
+    Admin[Admin] -->|Propose| Gov[Governance.rs]
+    
+    Token -->|Check Rules| Compliance[Compliance.rs]
+    Token -->|Verify User| Identity[IdentityTrait: SBT]
+    Token -->|Distribute| Yield[Storage.rs: Yield Index]
+    
+    Compliance -->|Read| Restrictions[Types.rs]
+```
+
+| Module | Description |
+|--------|-------------|
+| `lib.rs` | Main entry point. Handles token standard (SEP-41) + high-level logic. |
+| `compliance.rs` | The "Policy Engine". Checks KYC, jurisdiction, and limits before any move. |
+| `governance.rs` | Implements the proposal/vote/execute flow for multi-sig. |
+| `types.rs` | Defines data structures (IdentityTrait, TransferRestrictions). |
+| `storage.rs` | Efficient storage patterns (Instance vs Persistent) for gas optimization. |
+
+### Frontend (Next.js/TypeScript)
+A modern, responsive dashboard built for both Asset Managers and Investors.
+
+- **Stack**: Next.js 15 (App Router), TailwindCSS, Framer Motion.
+- **Wallet**: Native integration with **Freighter**.
+- **Features**:
+  - **Admin Panel**: Issue tokens, freeze accounts, distribute yield.
+  - **Investor Dashboard**: View portfolio, check KYC status, claim yield.
+  - **Compliance View**: Real-time validation of transfer eligibility.
+
+---
+
+## 🛠️ Getting Started
+
+### Prerequisites
+- Node.js 18+
+- Rust & Cargo (latest stable)
+- Stellar CLI (`cargo install --locked stellar-cli`)
+- Freighter Wallet Extension
+
+### 1. Clone & Install
+```bash
+git clone https://github.com/shinjinihehe/Solyrix-AstraLink-.git
+cd Solyrix-AstraLink-
+
+# Install Frontend Dependencies
+cd frontend
+npm install
+```
+
+### 2. Build Smart Contract
+```bash
+cd ../contracts/rwa-token
+stellar contract build
+# Output: target/wasm32-unknown-unknown/release/astralink_rwa_token.wasm
+```
+
+### 3. Deploy (Testnet)
+```bash
+# Generate Identity
+stellar keys generate alice --network testnet
+
+# Deploy
+stellar contract deploy \
+  --wasm target/wasm32-unknown-unknown/release/astralink_rwa_token.wasm \
+  --source alice \
+  --network testnet
+```
+
+### 4. Run Frontend
+```bash
+cd ../frontend
+npm run dev
+# Open http://localhost:3000
+```
+
+---
+
+## 📱 User Guide
+
+### For Asset Managers (Admins)
+1. **Connect Wallet**: Use the Governor wallet (e.g., Alice).
+2. **Mint Tokens**: Go to `Admin` > `Mint`. Propose a new mint for an investor.
+3. **Distribute Yield**: Go to `Admin` > `Distribute Yield`.
+   - Select currency (e.g., USDC).
+   - Enter amount.
+   - Click "Deposit".
+   - *Yield is instantly allocated to all token holders.*
+
+### For Investors
+1. **Connect Wallet**: Use your Freighter wallet.
+2. **View Balance**: See your RWA token balance and native XLM.
+3. **Claim Yield**: 
+   - Check the **"Unclaimed Yield"** card.
+   - If > $0, click **"Claim Now"** to withdraw to your wallet.
+4. **Transfer**: Send tokens to other KYC'd investors via the Transfer tab.
+
+---
+
+## 🗺️ Roadmap Status
+
+- [x] **Phase 1: Core Foundation** (SEP-41 Token, Multi-Sig) ✅
+- [x] **Phase 2: Compliance Engine** (11-Point automated checks) ✅
+- [x] **Phase 3: Advanced Features** (Yield Streaming, Decoupled Identity) ✅
+- [ ] **Phase 4: Oracle Integration** (Real-time asset valuation)
+- [ ] **Phase 5: Mainnet Launch** (Audits & parameter tuning)
+
+---
+
+## 📄 License
+
+MIT © AstraLink Team

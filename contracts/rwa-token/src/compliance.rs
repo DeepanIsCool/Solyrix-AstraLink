@@ -23,17 +23,34 @@ pub fn verify_transfer(
         return Err(RWAError::AccountFrozen);
     }
     
-    // 3. Get compliance records
+    // 3. Get compliance records (still needed for other checks)
     let from_record = get_compliance_record(env, from)?;
     let to_record = get_compliance_record(env, to)?;
     
-    // 4. PRIORITY 1: KYC Verification
-    if !from_record.kyc_verified || !to_record.kyc_verified {
-        events::emit_compliance_violation(env, from.clone(), soroban_sdk::symbol_short!("NO_KYC"));
-        return Err(RWAError::KYCRequired);
+    // 4. Get transfer restrictions (moved up for identity check)
+    let restrictions = get_transfer_restrictions(env);
+    
+    // 5. PRIORITY 1: Cross-Contract SBT Verification OR Local KYC
+    if let Some(ref identity_contract) = restrictions.identity_contract {
+        // Use external Identity SBT contract for verification
+        let identity_client = crate::IdentityClient::new(env, identity_contract);
+        if !identity_client.has_sbt(from) {
+            events::emit_compliance_violation(env, from.clone(), soroban_sdk::symbol_short!("NO_SBT"));
+            return Err(RWAError::KYCRequired);
+        }
+        if !identity_client.has_sbt(to) {
+            events::emit_compliance_violation(env, to.clone(), soroban_sdk::symbol_short!("NO_SBT"));
+            return Err(RWAError::KYCRequired);
+        }
+    } else {
+        // Fallback to local KYC check for backward compatibility
+        if !from_record.kyc_verified || !to_record.kyc_verified {
+            events::emit_compliance_violation(env, from.clone(), soroban_sdk::symbol_short!("NO_KYC"));
+            return Err(RWAError::KYCRequired);
+        }
     }
     
-    // 5. Check KYC expiration
+    // 6. Check KYC expiration (still applies for accreditation expiry)
     let current_time = env.ledger().timestamp();
     if from_record.accreditation_expiry > 0 && from_record.accreditation_expiry < current_time {
         return Err(RWAError::KYCExpired);
@@ -41,9 +58,6 @@ pub fn verify_transfer(
     if to_record.accreditation_expiry > 0 && to_record.accreditation_expiry < current_time {
         return Err(RWAError::KYCExpired);
     }
-    
-    // 6. Get transfer restrictions
-    let restrictions = get_transfer_restrictions(env);
     
     // 7. PRIORITY 2: Accredited Investor Check (Reg D compliance)
     if restrictions.require_accreditation {
@@ -114,6 +128,7 @@ pub fn get_transfer_restrictions(env: &Env) -> TransferRestrictions {
                 allowed_jurisdictions: Vec::new(env),
                 require_accreditation: true,  
                 daily_transfer_limit: 100_000_000000,
+                identity_contract: None, // Use local KYC by default
             }
         })
 }

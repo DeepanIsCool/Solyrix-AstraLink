@@ -1,6 +1,16 @@
 //! Custom data types for RWA token compliance and governance
 
-use soroban_sdk::{contracttype, Address, String, Vec, Symbol, Val};
+use soroban_sdk::{contracttype, contractclient, Address, String, Vec, Symbol, Val, Env};
+
+// ============ IDENTITY INTERFACE (CROSS-CONTRACT) ============
+
+/// Interface for external Identity SBT contracts
+/// Ready for ZK-Identity providers like Anon Aadhaar
+#[contractclient(name = "IdentityClient")]
+pub trait IdentityTrait {
+    /// Check if user has a valid Soulbound Token (SBT)
+    fn has_sbt(env: Env, user: Address) -> bool;
+}
 
 // ============ JURISDICTION & INVESTOR STATUS ============
 
@@ -49,6 +59,7 @@ pub struct TransferRestrictions {
     pub allowed_jurisdictions: Vec<Jurisdiction>,
     pub require_accreditation: bool,     // true for Reg D compliance
     pub daily_transfer_limit: i128,      // 100_000_000000 ($100k with 6 decimals)
+    pub identity_contract: Option<Address>, // External SBT contract for cross-contract KYC
 }
 
 /// Transaction log entry for audit trail

@@ -72,3 +72,43 @@ pub fn set_first_acquisition(env: &Env, address: &Address, timestamp: u64) {
         env.storage().persistent().set(&key, &timestamp);
     }
 }
+
+// ============ YIELD STREAMING STORAGE ============
+
+/// Yield token address key
+pub const YIELD_TOKEN: Symbol = symbol_short!("yld_tkn");
+
+/// Cumulative yield index key (scaled by 1e12)
+pub const CUMULATIVE_YIELD_INDEX: Symbol = symbol_short!("yld_idx");
+
+/// Get cumulative yield index (scaled by 1e12 for precision)
+pub fn get_cumulative_yield_index(env: &Env) -> i128 {
+    env.storage().persistent().get(&CUMULATIVE_YIELD_INDEX).unwrap_or(0)
+}
+
+/// Set cumulative yield index
+pub fn set_cumulative_yield_index(env: &Env, index: i128) {
+    env.storage().persistent().set(&CUMULATIVE_YIELD_INDEX, &index);
+}
+
+/// Get user's last claimed yield index
+pub fn get_user_yield_index(env: &Env, user: &Address) -> i128 {
+    let key = (symbol_short!("usr_yld"), user);
+    env.storage().persistent().get(&key).unwrap_or(0)
+}
+
+/// Set user's last claimed yield index
+pub fn set_user_yield_index(env: &Env, user: &Address, index: i128) {
+    let key = (symbol_short!("usr_yld"), user);
+    env.storage().persistent().set(&key, &index);
+}
+
+/// Get yield token address
+pub fn get_yield_token(env: &Env) -> Option<Address> {
+    env.storage().persistent().get(&YIELD_TOKEN)
+}
+
+/// Set yield token address
+pub fn set_yield_token(env: &Env, token: &Address) {
+    env.storage().persistent().set(&YIELD_TOKEN, token);
+}
