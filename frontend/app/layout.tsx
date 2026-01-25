@@ -14,13 +14,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="antialiased bg-cream-100">
-        <AnonAadhaarProvider 
+        <AnonAadhaarProvider
           _useTestAadhaar={false}
           _appName="AstraLink"
           _artifactslinks={{
-            zkey_url: "https://anon-aadhaar-artifacts.s3.eu-west-1.amazonaws.com/v2.0.0/circuit_final.zkey",
-            wasm_url: "https://anon-aadhaar-artifacts.s3.eu-west-1.amazonaws.com/v2.0.0/aadhaar-verifier.wasm",
-            vkey_url: "https://anon-aadhaar-artifacts.s3.eu-west-1.amazonaws.com/v2.0.0/vkey.json"
+            zkey_url: "https://anon-aadhaar-artifacts.s3.eu-central-1.amazonaws.com/v2.0.0/circuit_final.zkey",
+            vkey_url: "https://anon-aadhaar-artifacts.s3.eu-central-1.amazonaws.com/v2.0.0/vkey.json",
+            wasm_url: "https://anon-aadhaar-artifacts.s3.eu-central-1.amazonaws.com/v2.0.0/aadhaar-verifier.wasm",
           }}
         >
           {children}

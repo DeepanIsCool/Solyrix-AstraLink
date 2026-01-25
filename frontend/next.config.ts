@@ -24,6 +24,14 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
+  async rewrites() {
+    return [
+      {
+        source: '/artifacts/:path*',
+        destination: 'https://anon-aadhaar-artifacts.s3.eu-central-1.amazonaws.com/v2.0.0/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
