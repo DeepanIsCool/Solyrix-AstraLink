@@ -9,11 +9,12 @@
 
 ---
 
-## 🚀 Live Demo
+## 🚀 Live Demo & Deployed Contracts
 
-**Contract ID:** `CBEHEOVOYODO7D62TFMNMI6EVK6NOLH7MLLUHNKWRGDZATP356YSHQL3`
-
-[View on Stellar Explorer](https://stellar.expert/explorer/testnet/contract/CBEHEOVOYODO7D62TFMNMI6EVK6NOLH7MLLUHNKWRGDZATP356YSHQL3)
+| Contract | Network | Contract ID | Explorer |
+|----------|---------|-------------|----------|
+| **RWA Token** | Testnet | `CBEHEOVOYODO7D62TFMNMI6EVK6NOLH7MLLUHNKWRGDZATP356YSHQL3` | [View](https://stellar.expert/explorer/testnet/contract/CBEHEOVOYODO7D62TFMNMI6EVK6NOLH7MLLUHNKWRGDZATP356YSHQL3) |
+| **Identity SBT** | Testnet | `CD5ZWBKB4H3HV63Z5TVDOMRNBIQNCUWONHXP5AEDUN52MAPXEIRJNJYH` | [View](https://stellar.expert/explorer/testnet/contract/CD5ZWBKB4H3HV63Z5TVDOMRNBIQNCUWONHXP5AEDUN52MAPXEIRJNJYH) |
 
 ---
 
@@ -216,6 +217,12 @@ cd Solyrix-AstraLink-
 # Install Frontend Dependencies
 cd frontend
 npm install
+
+# Setup Environment
+cp .env.local.example .env.local
+# Add your:
+# - NEXT_PUBLIC_IDENTITY_CONTRACT_ID (Your Identity SBT Contract)
+# - RELAYER_SECRET_KEY (For gasless verification)
 ```
 
 ### 2. Build Smart Contract
