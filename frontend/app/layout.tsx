@@ -15,7 +15,7 @@ export default function RootLayout({
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="antialiased bg-cream-100">
         <AnonAadhaarProvider
-          _useTestAadhaar={false}
+          _useTestAadhaar={true}
           _appName="AstraLink"
           _artifactslinks={{
             zkey_url: "https://anon-aadhaar-artifacts.s3.eu-central-1.amazonaws.com/v2.0.0/circuit_final.zkey",
