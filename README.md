@@ -42,20 +42,79 @@
 
 ## 🏗️ Technical Architecture
 
-### Smart Contract (Rust/Soroban)
-The logic is modularized for security and upgradeability:
+### System Architecture
 
 ```mermaid
-graph TD
-    User[User] -->|Transfer| Token[Lib.rs: RWA Token]
-    Admin[Admin] -->|Propose| Gov[Governance.rs]
-    
-    Token -->|Check Rules| Compliance[Compliance.rs]
-    Token -->|Verify User| Identity[IdentityTrait: SBT]
-    Token -->|Distribute| Yield[Storage.rs: Yield Index]
-    
-    Compliance -->|Read| Restrictions[Types.rs]
+graph TB
+    subgraph "Frontend Layer"
+        UI[Next.js Frontend]
+        Landing[Landing Page]
+        Dashboard[Dashboard]
+        Transfer[Transfer Page]
+        Governance[Governance Page]
+        Admin[Admin Panel]
+        Compliance[Compliance Page]
+    end
+
+    subgraph "Authentication & Identity"
+        Freighter[Freighter Wallet]
+        AnonAadhaar[Anon Aadhaar ZK Proof]
+        Relayer[Backend Relayer API]
+    end
+
+    subgraph "Stellar Blockchain"
+        subgraph "Smart Contracts"
+            RWAToken[RWA Token Contract]
+            IdentitySBT[Identity SBT Contract]
+        end
+        
+        subgraph "Contract Modules"
+            ComplianceEngine[Compliance Engine]
+            GovernanceModule[2-of-3 Multi-sig]
+            StorageLayer[Storage Layer]
+            EventSystem[Event System]
+        end
+    end
+
+    subgraph "External Services"
+        USDC[USDC Token]
+        StellarNetwork[Stellar Testnet]
+    end
+
+    UI --> Landing
+    UI --> Dashboard
+    Dashboard --> Transfer
+    Dashboard --> Governance
+    Dashboard --> Admin
+    Dashboard --> Compliance
+
+    Transfer --> Freighter
+    Governance --> Freighter
+    Admin --> Freighter
+    Compliance --> AnonAadhaar
+
+    Freighter --> RWAToken
+    AnonAadhaar --> Relayer
+    Relayer --> RWAToken
+
+    RWAToken --> ComplianceEngine
+    RWAToken --> GovernanceModule
+    RWAToken --> StorageLayer
+    RWAToken --> EventSystem
+    RWAToken --> IdentitySBT
+    RWAToken --> USDC
+
+    RWAToken --> StellarNetwork
+    IdentitySBT --> StellarNetwork
+
+    style RWAToken fill:#c89116,stroke:#000,stroke-width:3px,color:#000
+    style IdentitySBT fill:#c89116,stroke:#000,stroke-width:2px,color:#000
+    style UI fill:#a855f7,stroke:#fff,stroke-width:2px,color:#fff
+    style Freighter fill:#4ade80,stroke:#000,stroke-width:2px,color:#000
+    style AnonAadhaar fill:#f87171,stroke:#000,stroke-width:2px,color:#000
 ```
+
+### Smart Contract Modules
 
 | Module | Description |
 |--------|-------------|
@@ -65,15 +124,79 @@ graph TD
 | `types.rs` | Defines data structures (IdentityTrait, TransferRestrictions). |
 | `storage.rs` | Efficient storage patterns (Instance vs Persistent) for gas optimization. |
 
-### Frontend (Next.js/TypeScript)
-A modern, responsive dashboard built for both Asset Managers and Investors.
+### Transfer Operation Flow
 
-- **Stack**: Next.js 15 (App Router), TailwindCSS, Framer Motion.
-- **Wallet**: Native integration with **Freighter**.
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Transfer Page
+    participant Wallet as Freighter Wallet
+    participant Contract as RWA Token Contract
+    participant Compliance as Compliance Module
+    participant Storage as Storage Layer
+    participant Events as Event System
+
+    User->>UI: Enter recipient & amount
+    UI->>UI: Check sender KYC status
+    UI->>UI: Check recipient KYC status
+    UI->>UI: Validate compliance checks
+    UI->>User: Show compliance preview
+    User->>UI: Confirm transfer
+    UI->>Wallet: Request signature
+    Wallet->>User: Prompt for approval
+    User->>Wallet: Approve transaction
+    Wallet->>Contract: Submit transfer(from, to, amount)
+    Contract->>Compliance: verify_transfer()
+    Compliance->>Compliance: Check KYC status
+    Compliance->>Compliance: Check holding period
+    Compliance->>Compliance: Check daily limits
+    Compliance->>Compliance: Check ownership limits
+    Compliance-->>Contract: Compliance OK
+    Contract->>Storage: Update balances
+    Contract->>Storage: Update daily limits
+    Contract->>Events: emit_transfer()
+    Contract-->>Wallet: Transaction success
+    Wallet-->>UI: Transaction hash
+    UI-->>User: Success notification
+```
+
+### Governance State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> ProposalCreated: Governor creates proposal
+    ProposalCreated --> PendingApproval: Awaiting votes
+    
+    PendingApproval --> FirstApproval: Governor 1 approves
+    FirstApproval --> SecondApproval: Governor 2 approves
+    SecondApproval --> Executed: Auto-execute (2-of-3 threshold met)
+    
+    PendingApproval --> Expired: Expiry ledger reached
+    FirstApproval --> Expired: Expiry ledger reached
+    
+    Executed --> [*]: Action completed
+    Expired --> [*]: Proposal failed
+    
+    note right of PendingApproval
+        Actions: mint, burn,
+        freeze, update_kyc,
+        set_identity_contract
+    end note
+    
+    note right of Executed
+        Requires 2-of-3
+        multi-sig approval
+    end note
+```
+
+### Frontend Stack
+- **Framework**: Next.js 15 (App Router), TailwindCSS, Framer Motion
+- **Wallet**: Native integration with **Freighter**
+- **Identity**: Anon Aadhaar ZK-proof verification
 - **Features**:
-  - **Admin Panel**: Issue tokens, freeze accounts, distribute yield.
-  - **Investor Dashboard**: View portfolio, check KYC status, claim yield.
-  - **Compliance View**: Real-time validation of transfer eligibility.
+  - **Admin Panel**: Issue tokens, freeze accounts, distribute yield
+  - **Investor Dashboard**: View portfolio, check KYC status, claim yield
+  - **Compliance View**: Real-time validation of transfer eligibility
 
 ---
 
