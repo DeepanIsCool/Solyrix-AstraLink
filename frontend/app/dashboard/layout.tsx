@@ -1,7 +1,9 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
+import { SparklesCore } from "@/components/ui/sparkles"
 import { motion } from 'framer-motion'
 import {
     LayoutDashboard,
@@ -15,7 +17,8 @@ import { WalletButton } from '@/components/WalletButton'
 import { useWallet } from '@/lib/store'
 
 const navigation = [
-    { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+
     { name: 'Transfer', href: '/dashboard/transfer', icon: Send },
     { name: 'Governance', href: '/dashboard/governance', icon: Vote },
     { name: 'Compliance', href: '/dashboard/compliance', icon: Shield },
@@ -32,21 +35,43 @@ export default function DashboardLayout({
     children: React.ReactNode
 }) {
     const pathname = usePathname()
+    const router = useRouter()
     const { isConnected } = useWallet()
-
-    // For now, assume non-governor (will implement proper check later)
     const isGovernor = false
 
     return (
-        <div className="min-h-screen bg-cream-100">
+        <div className="min-h-screen bg-obsidian-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/10 via-obsidian-950 to-obsidian-950 text-white selection:bg-gold-500/30">
+
+            {/* Ambient Background Grid */}
+            <div className="fixed inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20 pointer-events-none" />
+
+            {/* Sparkles Effect */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <SparklesCore
+                    id="dashboard-sparkles"
+                    background="transparent"
+                    minSize={0.6}
+                    maxSize={1.4}
+                    particleDensity={40}
+                    className="w-full h-full"
+                    particleColor="#FFFFFF"
+                />
+            </div>
+
             {/* Header */}
-            <header className="h-16 border-b border-brown-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-                <div className="h-full px-6 flex items-center justify-between">
+            <header className="h-24 border-b border-white/5 bg-obsidian-950/50 backdrop-blur-md sticky top-0 z-50">
+                <div className="h-full px-8 flex items-center justify-between">
                     {/* Logo */}
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brown-600 to-brown-500" />
-                        <span className="text-xl font-semibold text-brown-800">AstraLink</span>
-                    </Link>
+                    <div className="flex items-center relative">
+                        <Image
+                            src="/logo.png"
+                            alt="AstraLink Logo"
+                            width={240}
+                            height={80}
+                            priority
+                            className="object-contain h-full w-auto"
+                        />
+                    </div>
 
                     {/* Wallet */}
                     <WalletButton />
@@ -54,9 +79,9 @@ export default function DashboardLayout({
             </header>
 
             {/* Main Layout */}
-            <div className="flex">
-                {/* Sidebar Navigation */}
-                <aside className="w-60 min-h-[calc(100vh-4rem)] border-r border-brown-200 bg-white/50 p-6">
+            <div className="flex relative z-10">
+                {/* Sidebar Navigation - Floating Glass Dock */}
+                <aside className="fixed right-6 top-24 w-64 h-[calc(100vh-8rem)] rounded-2xl glass-card border-white/5 p-4 hidden lg:block">
                     <nav className="space-y-1">
                         {navigation.map((item) => {
                             const isActive = pathname === item.href
@@ -65,71 +90,83 @@ export default function DashboardLayout({
                                     key={item.name}
                                     href={item.href}
                                     className="block"
+                                    prefetch={false}
+                                    onClick={(e) => {
+                                        if (item.name === 'Dashboard') {
+                                            e.preventDefault()
+                                            router.push('/dashboard')
+                                        }
+                                    }}
                                 >
                                     <motion.div
                                         whileHover={{ x: 4 }}
                                         className={`
-                      flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                      ${isActive
-                                                ? 'bg-brown-100 text-brown-800'
-                                                : 'text-brown-400 hover:text-brown-700 hover:bg-brown-50'
+                                            relative overflow-hidden group
+                                            flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300
+                                            ${isActive
+                                                ? 'text-gold-400 bg-gold-400/10 shadow-[0_0_15px_rgba(250,204,21,0.1)] border border-gold-400/20'
+                                                : 'text-zinc-400 hover:text-white hover:bg-white/5'
                                             }
-                    `}
+                                        `}
                                     >
-                                        <item.icon className="w-5 h-5" />
-                                        {item.name}
+                                        <item.icon className="w-5 h-5 relative z-10" />
+                                        <span className="relative z-10">{item.name}</span>
+
+                                        {/* Hover Glow Bar */}
+                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gold-400 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300" />
                                     </motion.div>
                                 </Link>
                             )
                         })}
 
-                        {/* Admin Section (Governors Only) */}
+                        {/* Admin Section */}
                         {isGovernor && (
-                            <>
-                                <div className="pt-6 mt-6 border-t border-brown-200">
-                                    <p className="px-3 text-xs font-medium text-brown-300 uppercase tracking-wider mb-2">
-                                        Administration
-                                    </p>
-                                    {adminNavigation.map((item) => {
-                                        const isActive = pathname === item.href
-                                        return (
-                                            <Link
-                                                key={item.name}
-                                                href={item.href}
-                                                className="block"
+                            <div className="mt-8 pt-8 border-t border-white/5">
+                                <p className="px-4 text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">
+                                    Administration
+                                </p>
+                                {adminNavigation.map((item) => {
+                                    const isActive = pathname === item.href
+                                    return (
+                                        <Link
+                                            key={item.name}
+                                            href={item.href}
+                                            className="block"
+                                        >
+                                            <motion.div
+                                                whileHover={{ x: 4 }}
+                                                className={`
+                                                    flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
+                                                    ${isActive
+                                                        ? 'text-purple-400 bg-purple-500/10 border border-purple-500/20'
+                                                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                                                    }
+                                                `}
                                             >
-                                                <motion.div
-                                                    whileHover={{ x: 4 }}
-                                                    className={`
-                            flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                            ${isActive
-                                                            ? 'bg-brown-100 text-brown-800'
-                                                            : 'text-brown-400 hover:text-brown-700 hover:bg-brown-50'
-                                                        }
-                          `}
-                                                >
-                                                    <item.icon className="w-5 h-5" />
-                                                    {item.name}
-                                                </motion.div>
-                                            </Link>
-                                        )
-                                    })}
-                                </div>
-                            </>
+                                                <item.icon className="w-5 h-5" />
+                                                {item.name}
+                                            </motion.div>
+                                        </Link>
+                                    )
+                                })}
+                            </div>
                         )}
                     </nav>
 
-                    {/* Contract Info */}
-                    <div className="mt-auto pt-6">
-                        <div className="p-3 rounded-lg bg-brown-50 border border-brown-100">
-                            <p className="text-xs text-brown-300 mb-1">Network</p>
-                            <p className="text-sm font-medium text-brown-600">Stellar Testnet</p>
+                    {/* Network Status Pill */}
+                    <div className="absolute bottom-4 left-4 right-4">
+                        <div className="flex items-center justify-between px-4 py-3 rounded-full bg-black/40 border border-white/5">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="text-xs font-medium text-emerald-500">Testnet Live</span>
+                            </div>
+                            <span className="text-xs text-zinc-600">v1.2</span>
                         </div>
                     </div>
                 </aside>
 
-                {/* Main Content */}
-                <main className="flex-1 p-12">
+                {/* Main Content Area */}
+                <main className="flex-1 lg:mr-72 p-6 lg:p-8 min-h-screen">
                     {children}
                 </main>
             </div>

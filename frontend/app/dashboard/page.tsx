@@ -18,11 +18,13 @@ export default function DashboardOverview() {
 
     if (!isConnected) {
         return (
-            <div className="flex items-center justify-center h-full">
-                <div className="text-center max-w-md">
-                    <Shield className="w-16 h-16 text-brown-300 mx-auto mb-4" />
-                    <h2 className="text-2xl font-semibold text-brown-800 mb-2">Connect Your Wallet</h2>
-                    <p className="text-brown-400">Please connect your Freighter wallet to access the dashboard</p>
+            <div className="flex items-center justify-center h-[60vh]">
+                <div className="text-center max-w-md p-8 glass-card rounded-2xl border-white/5">
+                    <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
+                        <Shield className="w-10 h-10 text-white/50" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2 font-heading">Connect Wallet</h2>
+                    <p className="text-zinc-400 mb-6">Connect your Freighter wallet to access the AstraLink RWA platform.</p>
                 </div>
             </div>
         )
@@ -37,7 +39,6 @@ export default function DashboardOverview() {
         if (!kycStatus) return 'Not Verified'
         if (!kycStatus.kyc_verified) return 'Not Verified'
 
-        // Map investor status to readable format
         const statusMap: Record<string, string> = {
             'Retail': 'Verified (Retail)',
             'Accredited': 'Verified (Accredited)',
@@ -47,188 +48,177 @@ export default function DashboardOverview() {
     }
 
     const kycStatusDisplay = getKycStatusDisplay()
-    const kycStatusColor = kycStatus?.kyc_verified ? 'text-success' : 'text-warning'
+    const isVerified = kycStatus?.kyc_verified
+    const kycStatusColor = isVerified ? 'text-success' : 'text-zinc-500' // Using neon green for success
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-6xl"
+            className="max-w-7xl mx-auto space-y-4"
         >
-            {/* Balance Hero */}
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 }}
-                className="mb-8 p-8 rounded-xl bg-gradient-to-br from-brown-600 to-brown-500 text-white shadow-xl"
-            >
-                <div className="flex items-center gap-2 text-white/70 text-sm mb-2">
-                    <Coins className="w-4 h-4" />
-                    <span>Total Balance</span>
+            {/* Header Greeting */}
+            <div className="flex items-end justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-white font-heading">Overview</h1>
+                    <p className="text-zinc-400 mt-1">Welcome back, Investor.</p>
                 </div>
-
-                {balanceLoading ? (
-                    <div className="flex items-center gap-3 mb-1">
-                        <Loader2 className="w-8 h-8 animate-spin" />
-                        <span className="text-2xl text-white/70">Loading balance...</span>
-                    </div>
-                ) : (
-                    <>
-                        <div className="text-5xl font-bold mb-1">{displayBalance}</div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xl text-white/80">{symbol} Tokens</span>
-                            {metadataLoading && (
-                                <>
-                                    <span className="text-white/50">•</span>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                </>
-                            )}
-                        </div>
-                    </>
-                )}
-            </motion.div>
-
-            {/* Yield Claim Card */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="mb-8 p-6 rounded-xl bg-gradient-to-br from-amber-50 via-emerald-50 to-amber-50 border-2 border-amber-200 shadow-lg"
-            >
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-full bg-gradient-to-br from-amber-400 to-emerald-500">
-                            <Gift className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-brown-500 font-medium">Unclaimed Yield</p>
-                            {yieldLoading ? (
-                                <div className="flex items-center gap-2">
-                                    <Loader2 className="w-5 h-5 animate-spin text-amber-600" />
-                                    <span className="text-brown-400">Loading...</span>
-                                </div>
-                            ) : (
-                                <p className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-emerald-600 bg-clip-text text-transparent">
-                                    ${parseFloat(yieldAmount).toFixed(2)} USDC
-                                </p>
-                            )}
-                        </div>
-                    </div>
-
-                    {hasYield && !yieldLoading && (
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={claim}
-                            disabled={isClaiming}
-                            className="px-6 py-3 rounded-lg bg-gradient-to-r from-amber-500 to-emerald-500 text-white font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
-                        >
-                            {isClaiming ? (
-                                <span className="flex items-center gap-2">
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    Claiming...
-                                </span>
-                            ) : (
-                                'Claim Now'
-                            )}
-                        </motion.button>
-                    )}
-
-                    {!hasYield && !yieldLoading && (
-                        <p className="text-sm text-brown-400 italic">No yield available to claim</p>
-                    )}
+                <div className="text-right hidden sm:block">
+                    <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Portfolio Value</p>
+                    <p className="text-2xl font-bold text-white">${displayBalance}</p>
                 </div>
-            </motion.div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-6 mb-8">
-                {[
-                    { label: 'Available', value: displayBalance, icon: Coins, color: 'text-brown-600', loading: balanceLoading },
-                    { label: 'KYC Status', value: kycStatusDisplay, icon: Shield, color: kycStatusColor, loading: kycLoading },
-                    { label: 'Holding Period', value: '0 days', icon: Clock, color: 'text-brown-400', loading: false },
-                ].map((stat, i) => (
-                    <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 + i * 0.1 }}
-                        className="p-6 rounded-lg bg-white border border-brown-200 shadow-sm"
-                    >
-                        <div className="flex items-center gap-3 mb-3">
-                            {stat.loading ? (
-                                <Loader2 className="w-5 h-5 text-brown-400 animate-spin" />
-                            ) : (
-                                <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                            )}
-                            <span className="text-sm text-brown-400">{stat.label}</span>
-                        </div>
-                        <div className="text-2xl font-semibold text-brown-800">{stat.value}</div>
-                    </motion.div>
-                ))}
             </div>
 
-            {/* Quick Actions */}
+            {/* Main Hero Card - Glass + Gradient */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="p-6 rounded-lg bg-white border border-brown-200"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+                className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-2xl p-8 lg:p-10 group"
             >
-                <h3 className="text-lg font-semibold text-brown-800 mb-4">Quick Actions</h3>
-                <div className="grid grid-cols-2 gap-4">
-                    <Link href="/dashboard/transfer">
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="w-full py-3 px-4 rounded-lg bg-brown-600 text-white font-medium shadow-md hover:shadow-lg transition-all"
-                        >
-                            Transfer Tokens
-                        </motion.button>
-                    </Link>
-                    <Link href="/dashboard/governance">
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="w-full py-3 px-4 rounded-lg bg-white border-2 border-brown-600 text-brown-600 font-medium hover:bg-brown-50 transition-all"
-                        >
-                            View Governance
-                        </motion.button>
-                    </Link>
+                {/* Glow Effects */}
+                <div className="absolute -right-20 -top-20 w-96 h-96 bg-gold-400/20 rounded-full blur-[100px] pointer-events-none group-hover:bg-gold-400/30 transition-all duration-700" />
+                <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-purple-500/20 rounded-full blur-[80px] pointer-events-none" />
+
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+                    <div>
+                        <div className="flex items-center gap-2 text-gold-400 mb-2 font-medium">
+                            <Coins className="w-5 h-5" />
+                            <span>Total Balance</span>
+                        </div>
+
+                        {balanceLoading ? (
+                            <div className="flex items-center gap-3">
+                                <Loader2 className="w-8 h-8 animate-spin text-white/20" />
+                                <span className="text-3xl text-white/30 font-heading">Loading...</span>
+                            </div>
+                        ) : (
+                            <div>
+                                <h2 className="text-6xl lg:text-7xl font-bold font-heading text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-zinc-400 tracking-tight">
+                                    {displayBalance}
+                                </h2>
+                                <div className="flex items-center gap-3 mt-2">
+                                    <span className="text-lg text-zinc-400 font-medium tracking-wide">
+                                        {symbol} Tokens
+                                    </span>
+                                    {metadataLoading && <Loader2 className="w-4 h-4 animate-spin text-zinc-600" />}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex gap-4">
+                        <Link href="/dashboard/transfer">
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="px-6 py-3 rounded-xl bg-gold-500 text-obsidian-950 font-bold shadow-[0_0_20px_rgba(250,204,21,0.3)] hover:shadow-[0_0_30px_rgba(250,204,21,0.5)] transition-all flex items-center gap-2"
+                            >
+                                <Coins className="w-4 h-4" />
+                                Transfer
+                            </motion.button>
+                        </Link>
+                        <Link href="/dashboard/governance">
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-all flex items-center gap-2"
+                            >
+                                <Shield className="w-4 h-4" />
+                                Governance
+                            </motion.button>
+                        </Link>
+                    </div>
                 </div>
             </motion.div>
 
-            {/* Contract Info */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
-                className="mt-6 p-4 rounded-lg bg-brown-50/50 border border-brown-100"
-            >
-                <div className="text-xs text-brown-400 space-y-1">
-                    <div className="flex justify-between">
-                        <span>Contract ID:</span>
-                        <span className="font-mono text-brown-600">CBYZE6XD6NXCS3SMRI...</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span>Your Address:</span>
-                        <span className="font-mono text-brown-600">
-                            {publicKey?.slice(0, 4)}...{publicKey?.slice(-4)}
-                        </span>
-                    </div>
-                    {metadata && !metadataLoading && (
-                        <>
-                            <div className="flex justify-between">
-                                <span>Token Name:</span>
-                                <span className="font-medium text-brown-600">{metadata.name}</span>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Pending Yield Card - Special Glow */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="relative overflow-hidden rounded-2xl border border-gold-500/20 bg-gradient-to-br from-gold-500/5 to-transparent p-6 group"
+                >
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="p-3 rounded-xl bg-gold-500/10 text-gold-400">
+                            <Gift className="w-6 h-6" />
+                        </div>
+                        {hasYield && (
+                            <div className="px-2 py-1 rounded text-xs font-bold bg-gold-500 text-black animate-pulse">
+                                READY TO CLAIM
                             </div>
-                            <div className="flex justify-between">
-                                <span>Total Supply:</span>
-                                <span className="font-medium text-brown-600">{metadata.totalSupply} {symbol}</span>
-                            </div>
-                        </>
+                        )}
+                    </div>
+
+                    <p className="text-sm text-zinc-400 font-medium mb-1">Unclaimed Yield</p>
+                    {yieldLoading ? (
+                        <Loader2 className="w-6 h-6 animate-spin text-white/20" />
+                    ) : (
+                        <p className="text-3xl font-bold text-white font-heading">
+                            ${parseFloat(yieldAmount).toFixed(2)} <span className="text-sm text-zinc-500 font-sans font-normal">USDC</span>
+                        </p>
                     )}
+
+                    <div className="mt-6">
+                        <motion.button
+                            onClick={claim}
+                            disabled={!hasYield || isClaiming || yieldLoading}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className={`
+                                w-full py-3 rounded-lg font-semibold text-sm transition-all
+                                ${hasYield && !isClaiming
+                                    ? 'bg-gradient-to-r from-gold-400 to-amber-500 text-black shadow-lg shadow-gold-500/20'
+                                    : 'bg-white/5 text-zinc-500 cursor-not-allowed'
+                                }
+                            `}
+                        >
+                            {isClaiming ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <Loader2 className="w-4 h-4 animate-spin" /> Claiming...
+                                </span>
+                            ) : (
+                                "Claim Yield"
+                            )}
+                        </motion.button>
+                    </div>
+                </motion.div>
+
+                {/* KYC Status Card */}
+                <div className="glass-card rounded-2xl p-6">
+                    <div className="flex justify-between items-start mb-8">
+                        <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400">
+                            <Shield className="w-6 h-6" />
+                        </div>
+                        <div className={`w-2 h-2 rounded-full ${isVerified ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-zinc-700'}`} />
+                    </div>
+                    <p className="text-sm text-zinc-400 font-medium mb-1">Identity Status</p>
+                    <p className={`text-xl font-bold ${kycStatusColor} font-heading`}>{kycStatusDisplay}</p>
+                    {isVerified && <p className="text-xs text-zinc-500 mt-2">Access Level: Level 3</p>}
                 </div>
-            </motion.div>
+
+                {/* Holding Period Card */}
+                <div className="glass-card rounded-2xl p-6">
+                    <div className="flex justify-between items-start mb-8">
+                        <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400">
+                            <Clock className="w-6 h-6" />
+                        </div>
+                    </div>
+                    <p className="text-sm text-zinc-400 font-medium mb-1">Holding Period</p>
+                    <p className="text-xl font-bold text-white font-heading">0 Days</p>
+                    <p className="text-xs text-zinc-500 mt-2">Next Unlock: Instant</p>
+                </div>
+            </div>
+
+            {/* Recent Activity Mini Section (Optional placeholder) */}
+            <div className="pt-8 border-t border-white/5">
+                <h3 className="text-lg font-bold text-white mb-4">Recent Activity</h3>
+                <div className="glass-card rounded-xl p-8 text-center">
+                    <p className="text-zinc-500">No recent transactions found.</p>
+                </div>
+            </div>
+
         </motion.div>
     )
 }

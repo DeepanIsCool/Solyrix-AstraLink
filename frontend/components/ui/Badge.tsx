@@ -19,10 +19,10 @@ export function Badge({
     className,
 }: BadgeProps) {
     const variants = {
-        success: 'bg-success/10 text-success border-success/20',
-        warning: 'bg-warning/10 text-warning border-warning/20',
-        error: 'bg-error/10 text-error border-error/20',
-        neutral: 'bg-brown-100 text-brown-600 border-brown-200',
+        success: 'bg-green-500/10 text-green-400 border-green-500/20',
+        warning: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+        error: 'bg-red-500/10 text-red-400 border-red-500/20',
+        neutral: 'bg-white/5 text-zinc-400 border-white/10',
     }
 
     const sizes = {

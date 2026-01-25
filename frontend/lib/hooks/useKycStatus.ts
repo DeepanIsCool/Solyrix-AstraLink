@@ -33,7 +33,7 @@ export function useKycStatus() {
             setKycStatus(status)
         } catch (err) {
             // If no KYC record exists, return default unverified status
-            console.log('No KYC record found, using defaults')
+            // No KYC record found, using defaults
             setKycStatus({
                 kyc_verified: false,
                 investor_status: 'Retail',

@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+const { fontFamily } = require('tailwindcss/defaultTheme')
 
 const config: Config = {
   content: [
@@ -9,46 +10,51 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Cream Spectrum
-        cream: {
-          50: '#FDFBF7',
-          100: '#F8F4ED',
-          200: '#F0E6D6',
-          300: '#E8D7BF',
+        // Dark Obsidian Backbone
+        obsidian: {
+          950: '#030303', // Main background
+          900: '#0A0A0A', // Surface
+          800: '#121212', // Card background (solid fallback)
+          700: '#1E1E1E', // Border lighter
         },
-        // Brown Spectrum  
-        brown: {
-          50: '#F5F1ED',
-          100: '#E8DED4',
-          200: '#D4C2B0',
-          300: '#B8997A',
-          400: '#9C7D5E',
-          500: '#7A5E45',
-          600: '#5A442F',
-          700: '#3D2E1F',
-          800: '#2A1F14',
+        // Primary Brand: Electric Gold
+        gold: {
+          400: '#FACC15', // Neon gold
+          500: '#EAB308', // Standard gold
+          600: '#CA8A04', // Deep gold
         },
-        // Accent Colors
-        gold: '#C4A574',
-        success: '#8B9670',
-        error: '#B47B6B',
-        warning: '#D4A574',
+        // Secondary: Cyber Purple
+        purple: {
+          500: '#A855F7',
+          900: '#581C87',
+        },
+        // Functional
+        success: '#4ADE80', // Neon green
+        error: '#F87171',   // Soft red
+        glass: {
+          100: 'rgba(255, 255, 255, 0.03)',
+          200: 'rgba(255, 255, 255, 0.08)',
+          300: 'rgba(255, 255, 255, 0.12)',
+        }
       },
       fontFamily: {
-        sans: ['var(--font-geist-sans)'],
-        mono: ['var(--font-geist-mono)'],
+        heading: ['var(--font-unbounded)', ...fontFamily.sans],
+        sans: ['var(--font-inter)', ...fontFamily.sans],
       },
-      borderRadius: {
-        card: '12px',
-        button: '8px',
-        input: '6px',
+      backgroundImage: {
+        'glow-gradient': 'linear-gradient(135deg, rgba(250, 204, 21, 0.15) 0%, rgba(168, 85, 247, 0.05) 100%)',
+        'glass-gradient': 'linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 100%)',
       },
-      boxShadow: {
-        'premium-sm': '0 1px 2px rgba(122, 94, 69, 0.05)',
-        'premium-md': '0 4px 6px rgba(122, 94, 69, 0.07)',
-        'premium-lg': '0 10px 15px rgba(122, 94, 69, 0.1)',
-        'premium-xl': '0 20px 25px rgba(122, 94, 69, 0.12)',
+      animation: {
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'float': 'float 6s ease-in-out infinite',
       },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        }
+      }
     },
   },
   plugins: [],

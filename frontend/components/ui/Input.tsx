@@ -4,17 +4,13 @@ import { forwardRef } from 'react'
 import { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface InputProps {
+interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'prefix'> {
     label?: string
     error?: string
     prefix?: string | LucideIcon
     suffix?: string
     className?: string
-    value?: string
-    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
-    placeholder?: string
-    type?: string
-    disabled?: boolean
+    // value and onChange are already included in InputHTMLAttributes
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -24,14 +20,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         return (
             <div className="w-full">
                 {label && (
-                    <label className="block text-sm font-medium text-brown-700 mb-2">
+                    <label className="block text-sm font-medium text-zinc-400 mb-2">
                         {label}
                     </label>
                 )}
 
                 <div className="relative">
                     {prefix && (
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-brown-400">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
                             {PrefixIcon ? (
                                 <PrefixIcon className="w-5 h-5" />
                             ) : (
@@ -43,10 +39,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     <input
                         ref={ref}
                         className={cn(
-                            'w-full px-4 py-2.5 rounded-lg border text-brown-800 placeholder:text-brown-300',
-                            'focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent',
-                            'transition-all',
-                            error ? 'border-error focus:ring-error' : 'border-brown-200',
+                            'w-full px-4 py-3 rounded-xl border bg-black/20 text-white placeholder:text-zinc-600',
+                            'focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500/50',
+                            'transition-all duration-200',
+                            error ? 'border-red-500 focus:ring-red-500' : 'border-white/10',
                             prefix && 'pl-10',
                             suffix && 'pr-16',
                             className
@@ -56,7 +52,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
                     {suffix && (
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                            <span className="text-sm font-medium text-brown-400">{suffix}</span>
+                            <span className="text-sm font-medium text-zinc-500">{suffix}</span>
                         </div>
                     )}
                 </div>

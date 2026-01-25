@@ -1,53 +1,55 @@
+@font-face {
+  font-family: 'Barbra';
+  src: url('/barbra-font/Barbra-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Barbra';
+  src: url('/barbra-font/Barbra-High.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Premium cream/brown color system */
-    --background: 48 44% 96%;
-    /* cream-100 */
-    --foreground: 30 31% 11%;
-    /* brown-800 */
+    --background: 0 0% 1%;
+    /* obsidian-950 */
+    --foreground: 0 0% 100%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 30 31% 11%;
+    --card: 0 0% 4%;
+    /* obsidian-900 */
+    --card-foreground: 0 0% 100%;
 
-    --primary: 30 26% 37%;
-    /* brown-500 */
-    --primary-foreground: 48 44% 96%;
+    --primary: 48 96% 53%;
+    /* gold-400 */
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 30 17% 90%;
-    /* brown-50 */
-    --secondary-foreground: 30 26% 37%;
+    --secondary: 270 91% 65%;
+    /* purple-500 */
+    --secondary-foreground: 0 0% 100%;
 
-    --accent: 40 28% 62%;
-    /* gold */
-    --accent-foreground: 30 31% 11%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 60%;
 
-    --muted: 30 31% 91%;
-    /* cream-200 */
-    --muted-foreground: 30 18% 55%;
-
-    --border: 30 21% 77%;
-    /* brown-200 */
-    --input: 30 21% 77%;
-    --ring: 30 26% 37%;
-  }
-}
-
-@layer base {
-  * {
-    border-color: hsl(30 21% 77%);
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 48 96% 53%;
   }
 
   body {
-    background-color: hsl(48 44% 96%);
-    /* cream-100 */
-    color: hsl(30 31% 11%);
-    /* brown-800 */
-    font-family: var(--font-geist-sans);
-    font-feature-settings: "rlig" 1, "calt" 1;
+    background-color: #030303;
+    color: white;
+    background-image:
+      radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 10%, rgba(250, 204, 21, 0.03) 0%, transparent 40%);
   }
 
   h1,
@@ -56,27 +58,120 @@
   h4,
   h5,
   h6 {
-    color: hsl(30 31% 11%);
-    letter-spacing: -0.01em;
+    @apply font-heading;
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background: rgba(250, 204, 21, 0.3);
+    color: #FACC15;
   }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .glass-card {
+    @apply bg-glass-100 backdrop-blur-xl border border-white/5 shadow-2xl;
   }
 
-  .glass {
-    background-color: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(12px);
-    border: 1px solid hsla(30, 17%, 90%, 0.5);
+  .glass-card:hover {
+    @apply border-white/10 bg-glass-200 transition-all duration-300;
   }
 
-  .card-premium {
-    background-color: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 6px rgba(122, 94, 69, 0.07);
-    border: 1px solid hsl(30 17% 90%);
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-white via-neutral-200 to-neutral-400;
   }
+
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-gold-400 to-amber-500;
+  }
+}
+
+/* Anon Aadhaar Modal Styling */
+.anon-aadhaar-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
+/* Style the Anon Aadhaar button */
+.anon-aadhaar-wrapper button {
+  background-color: #c89116 !important;
+  color: #000000 !important;
+  border: none !important;
+  padding: 12px 24px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+}
+
+.anon-aadhaar-wrapper button:hover:not([disabled]) {
+  background-color: #eab308 !important;
+  transform: scale(1.02) !important;
+}
+
+/* Target Anon Aadhaar's modal overlay when it appears */
+body>div[class*="anon"],
+body>div[style*="position: fixed"] {
+  z-index: 999999 !important;
+}
+
+/* Style modal backdrop */
+body>div[class*="anon"]>div[style*="position: fixed"],
+body>div[style*="position: fixed"][style*="inset: 0"] {
+  background-color: rgba(0, 0, 0, 0.9) !important;
+  z-index: 999999 !important;
+}
+
+/* Style modal content */
+body>div[class*="anon"] div[style*="background"],
+body>div[style*="position: fixed"]>div {
+  background-color: #ffffff !important;
+  border-radius: 16px !important;
+  padding: 32px !important;
+  max-width: 500px !important;
+  margin: auto !important;
+}
+
+/* Modal text */
+body>div[class*="anon"] h1,
+body>div[class*="anon"] h2,
+body>div[class*="anon"] h3,
+body>div[class*="anon"] p,
+body>div[class*="anon"] span,
+body>div[class*="anon"] label {
+  color: #1a1a1a !important;
+}
+
+/* Modal buttons inside the modal */
+body>div[class*="anon"] button {
+  background-color: #c89116 !important;
+  color: #000000 !important;
+  border: none !important;
+  padding: 12px 24px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+body>div[class*="anon"] button:hover:not([disabled]) {
+  background-color: #eab308 !important;
+}
+
+/* File input */
+body>div[class*="anon"] input[type="file"] {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+  color: #1a1a1a !important;
+  width: 100% !important;
+}
+
+/* Links */
+body>div[class*="anon"] a {
+  color: #c89116 !important;
+  text-decoration: underline !important;
+}
+
+body>div[class*="anon"] a:hover {
+  color: #eab308 !important;
 }

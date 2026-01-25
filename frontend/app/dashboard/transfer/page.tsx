@@ -8,7 +8,7 @@ import { useToast, useWallet } from '@/lib/store'
 import { signTransaction } from '@stellar/freighter-api'
 import * as StellarSDK from '@stellar/stellar-sdk'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertCircle, CheckCircle, Loader2, Send, XCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle, Loader2, Send, Shield, XCircle } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 interface ComplianceCheck {
@@ -25,7 +25,7 @@ export default function TransferPage() {
     const [amount, setAmount] = useState('')
     const [isPreview, setIsPreview] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
-    
+
     // Real KYC status from blockchain
     const [senderKyc, setSenderKyc] = useState<any | null>(null)
     const [recipientKyc, setRecipientKyc] = useState<any | null>(null)
@@ -86,33 +86,33 @@ export default function TransferPage() {
 
     // Build real compliance checks based on blockchain data
     const complianceChecks: ComplianceCheck[] = [
-        { 
-            name: 'Wallet Connected', 
-            status: publicKey ? 'pass' : 'fail', 
-            detail: publicKey ? 'Freighter wallet connected' : 'Connect wallet first' 
+        {
+            name: 'Wallet Connected',
+            status: publicKey ? 'pass' : 'fail',
+            detail: publicKey ? 'Freighter wallet connected' : 'Connect wallet first'
         },
-        { 
-            name: 'Sender KYC Verified', 
+        {
+            name: 'Sender KYC Verified',
             status: senderKyc?.kyc_verified ? 'pass' : (publicKey ? 'fail' : 'pending'),
             detail: senderKyc?.kyc_verified ? `Status: ${senderKyc.investor_status}` : 'Your account requires KYC verification'
         },
-        { 
-            name: 'Valid Recipient Address', 
-            status: recipient.length === 56 ? 'pass' : 'pending', 
-            detail: recipient ? (recipient.length === 56 ? 'Stellar address valid' : 'Invalid address length') : 'Enter recipient address' 
+        {
+            name: 'Valid Recipient Address',
+            status: recipient.length === 56 ? 'pass' : 'pending',
+            detail: recipient ? (recipient.length === 56 ? 'Stellar address valid' : 'Invalid address length') : 'Enter recipient address'
         },
-        { 
-            name: 'Recipient KYC Verified', 
+        {
+            name: 'Recipient KYC Verified',
             status: isLoadingKyc ? 'loading' : (recipientKyc?.kyc_verified ? 'pass' : (recipient.length === 56 ? 'fail' : 'pending')),
             detail: isLoadingKyc ? 'Checking...' : (recipientKyc?.kyc_verified ? `Status: ${recipientKyc.investor_status}` : (recipient.length === 56 ? 'Recipient requires KYC verification' : 'Enter recipient address'))
         },
-        { 
-            name: 'Amount Validation', 
-            status: amount && parseFloat(amount) > 0 ? 'pass' : 'pending', 
-            detail: amount ? `${amount} MTT` : 'Enter amount' 
+        {
+            name: 'Amount Validation',
+            status: amount && parseFloat(amount) > 0 ? 'pass' : 'pending',
+            detail: amount ? `${amount} MTT` : 'Enter amount'
         },
-        { 
-            name: 'Sufficient Balance', 
+        {
+            name: 'Sufficient Balance',
             status: amount && parseFloat(amount) > 0 && senderBalance >= parseTokenAmount(amount || '0', 6) ? 'pass' : (amount ? 'fail' : 'pending'),
             detail: `Balance: ${Number(senderBalance) / 1_000_000} MTT`
         },
@@ -181,22 +181,23 @@ export default function TransferPage() {
 
 
     return (
-        <div className="max-w-6xl">
+        <div className="max-w-6xl mx-auto">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-brown-800 mb-2">Transfer Tokens</h1>
-                <p className="text-brown-400">Send MTT tokens with automated compliance verification</p>
+                <h1 className="text-3xl font-bold text-white mb-2 font-heading">Transfer Tokens</h1>
+                <p className="text-zinc-400">Send MTT tokens with automated compliance verification</p>
             </div>
 
-            <div className="grid grid-cols-5 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                 {/* Transfer Form - Left 3 columns */}
-                <div className="col-span-3">
-                    <Card>
-                        <div className="space-y-6">
+                <div className="lg:col-span-3">
+                    <div className="glass-card rounded-2xl p-8 border-white/10">
+                        <div className="space-y-8">
                             <Input
                                 label="Recipient Address"
                                 placeholder="GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
                                 value={recipient}
                                 onChange={(e) => setRecipient(e.target.value)}
+                                className="font-mono text-sm"
                             />
 
                             <Input
@@ -208,23 +209,23 @@ export default function TransferPage() {
                                 onChange={(e) => setAmount(e.target.value)}
                             />
 
-                            <div className="flex gap-3">
+                            <div className="pt-4">
                                 <Button
                                     variant="primary"
                                     icon={Send}
                                     onClick={handlePreview}
                                     disabled={!recipient || !amount}
-                                    className="flex-1"
+                                    className="w-full h-12 bg-gradient-to-r from-gold-400 to-amber-600 text-black font-bold hover:brightness-110 shadow-lg shadow-gold-500/20"
                                 >
                                     Preview Transfer
                                 </Button>
                             </div>
                         </div>
-                    </Card>
+                    </div>
                 </div>
 
                 {/* Compliance Preview - Right 2 columns */}
-                <div className="col-span-2">
+                <div className="lg:col-span-2">
                     <AnimatePresence mode="wait">
                         {!isPreview ? (
                             <motion.div
@@ -232,13 +233,14 @@ export default function TransferPage() {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
+                                className="h-full"
                             >
-                                <Card variant="outlined" padding="lg">
-                                    <div className="text-center text-brown-300">
-                                        <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                        <p className="text-sm">Enter details to preview compliance checks</p>
+                                <div className="h-full glass-card rounded-2xl p-8 border-white/5 bg-white/[0.02] flex flex-col items-center justify-center text-center">
+                                    <div className="p-4 rounded-full bg-white/5 mb-4">
+                                        <AlertCircle className="w-8 h-8 text-zinc-600" />
                                     </div>
-                                </Card>
+                                    <p className="text-zinc-500 max-w-[200px]">Enter recipient and amount to verify compliance</p>
+                                </div>
                             </motion.div>
                         ) : (
                             <motion.div
@@ -247,32 +249,38 @@ export default function TransferPage() {
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
                             >
-                                <Card>
-                                    <h3 className="text-lg font-semibold text-brown-800 mb-4">
-                                        Compliance Verification
+                                <div className="glass-card rounded-2xl p-6 border-white/10 bg-black/40">
+                                    <h3 className="text-lg font-bold text-white mb-6 font-heading flex items-center gap-2">
+                                        <Shield className="w-5 h-5 text-gold-400" />
+                                        Compliance Check
                                     </h3>
 
-                                    <div className="space-y-3 mb-6">
+                                    <div className="space-y-3 mb-8">
                                         {complianceChecks.map((check, i) => (
                                             <motion.div
                                                 key={check.name}
                                                 initial={{ opacity: 0, x: -10 }}
                                                 animate={{ opacity: 1, x: 0 }}
                                                 transition={{ delay: i * 0.05 }}
-                                                className="flex items-start gap-3 p-3 rounded-lg bg-brown-50/50"
+                                                className={`
+                                                    flex items-start gap-3 p-3 rounded-xl border
+                                                    ${check.status === 'pass' ? 'bg-green-500/10 border-green-500/20' :
+                                                        check.status === 'fail' ? 'bg-red-500/10 border-red-500/20' :
+                                                            'bg-white/5 border-white/5'}
+                                                `}
                                             >
                                                 {check.status === 'pass' ? (
-                                                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                                                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
                                                 ) : check.status === 'fail' ? (
-                                                    <XCircle className="w-5 h-5 text-error flex-shrink-0 mt-0.5" />
+                                                    <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                                                 ) : check.status === 'loading' ? (
-                                                    <Loader2 className="w-5 h-5 text-brown-400 flex-shrink-0 mt-0.5 animate-spin" />
+                                                    <Loader2 className="w-5 h-5 text-zinc-400 flex-shrink-0 mt-0.5 animate-spin" />
                                                 ) : (
-                                                    <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                                                    <AlertCircle className="w-5 h-5 text-zinc-500 flex-shrink-0 mt-0.5" />
                                                 )}
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-brown-800">{check.name}</p>
-                                                    <p className="text-xs text-brown-400 mt-0.5">{check.detail}</p>
+                                                    <p className={`text-sm font-medium ${check.status === 'pass' ? 'text-green-200' : 'text-zinc-300'}`}>{check.name}</p>
+                                                    <p className="text-xs text-zinc-500 mt-0.5">{check.detail}</p>
                                                 </div>
                                             </motion.div>
                                         ))}
@@ -283,15 +291,15 @@ export default function TransferPage() {
                                         onClick={handleTransfer}
                                         loading={isSubmitting}
                                         disabled={!allChecksPassed}
-                                        className="w-full"
+                                        className="w-full h-12 bg-green-500 hover:bg-green-600 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isSubmitting ? 'Processing...' : 'Confirm Transfer'}
                                     </Button>
 
-                                    <p className="text-xs text-brown-400 text-center mt-3">
+                                    <p className="text-xs text-zinc-600 text-center mt-4">
                                         Transaction requires Freighter wallet signature
                                     </p>
-                                </Card>
+                                </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
