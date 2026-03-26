@@ -10,7 +10,7 @@ import { useToast, useWallet } from '@/lib/store'
 import { signTransaction } from '@stellar/freighter-api'
 import * as StellarSDK from '@stellar/stellar-sdk'
 import { motion } from 'framer-motion'
-import { Banknote, Coins, Flame, Settings, Shield, ShieldX, Snowflake, UserCheck } from 'lucide-react'
+import { Banknote, Coins, Flame, Settings, Shield, ShieldX, Snowflake, UserCheck, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 
 // Known USDC testnet address (Stellar testnet)
@@ -147,6 +147,7 @@ export default function AdminPage() {
     )
 }
 
+// ============ MINT FORM (already working) ============
 function MintForm({ publicKey, addToast }: { publicKey: string; addToast: any }) {
     const [recipient, setRecipient] = useState('')
     const [amount, setAmount] = useState('')
@@ -241,7 +242,49 @@ function MintForm({ publicKey, addToast }: { publicKey: string; addToast: any })
     )
 }
 
+// ============ BURN FORM (now functional) ============
 function BurnForm({ publicKey, addToast }: { publicKey: string; addToast: any }) {
+    const [fromAddress, setFromAddress] = useState('')
+    const [amount, setAmount] = useState('')
+    const [reason, setReason] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const handleSubmit = async () => {
+        if (!fromAddress || !amount || !reason) {
+            addToast('Please fill all fields', 'warning')
+            return
+        }
+
+        setIsSubmitting(true)
+        try {
+            const amountBigInt = parseTokenAmount(amount, 6)
+            const params = [
+                StellarSDK.nativeToScVal(fromAddress, { type: 'address' }),
+                StellarSDK.nativeToScVal(amountBigInt, { type: 'i128' }),
+            ]
+
+            const xdr = await writeContract.propose(
+                publicKey,
+                'burn',
+                params,
+                100000
+            )
+
+            await signTransaction(xdr, {
+                networkPassphrase: StellarSDK.Networks.TESTNET,
+            })
+
+            addToast('Burn proposal created successfully!', 'success')
+            setFromAddress('')
+            setAmount('')
+            setReason('')
+        } catch (err) {
+            addToast(err instanceof Error ? err.message : 'Failed to create burn proposal', 'error')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
     return (
         <div className="space-y-6 max-w-2xl mx-auto">
             <div className="text-center mb-8">
@@ -250,46 +293,125 @@ function BurnForm({ publicKey, addToast }: { publicKey: string; addToast: any })
             </div>
 
             <div className="space-y-4">
-                <Input label="From Address" placeholder="GXXXXXXXXXXXXXXXXXXXXXXX..." className="bg-black/20 border-white/10 text-white" />
-                <Input label="Amount" type="number" placeholder="0.000000" suffix="MTT" className="bg-black/20 border-white/10 text-white" />
+                <Input
+                    label="From Address"
+                    placeholder="GXXXXXXXXXXXXXXXXXXXXXXX..."
+                    value={fromAddress}
+                    onChange={(e) => setFromAddress(e.target.value)}
+                    className="bg-black/20 border-white/10 text-white"
+                />
+                <Input
+                    label="Amount"
+                    type="number"
+                    placeholder="0.000000"
+                    suffix="MTT"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="bg-black/20 border-white/10 text-white"
+                />
                 <div>
                     <label className="block text-sm font-medium text-zinc-400 mb-2">Reason</label>
                     <textarea
                         className="w-full px-4 py-3 rounded-lg bg-black/20 border border-white/10 text-white placeholder:text-zinc-700 focus:outline-none focus:border-red-500/50 transition-colors"
                         rows={3}
                         placeholder="e.g., Asset redemption..."
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
                     />
                 </div>
             </div>
 
             <div className="pt-4">
-                <Button className="w-full h-12 bg-red-500/10 text-red-400 border border-red-500/50 hover:bg-red-500/20">
-                    Create Burn Proposal
+                <Button
+                    className="w-full h-12 bg-red-500/10 text-red-400 border border-red-500/50 hover:bg-red-500/20"
+                    onClick={handleSubmit}
+                    loading={isSubmitting}
+                >
+                    {isSubmitting ? 'Creating Proposal...' : 'Create Burn Proposal'}
                 </Button>
             </div>
         </div>
     )
 }
 
+// ============ FREEZE FORM (now functional) ============
 function FreezeForm({ publicKey, addToast }: { publicKey: string; addToast: any }) {
+    const [accountAddress, setAccountAddress] = useState('')
+    const [action, setAction] = useState<'freeze' | 'unfreeze'>('freeze')
+    const [reason, setReason] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const handleSubmit = async () => {
+        if (!accountAddress || !reason) {
+            addToast('Please fill all fields', 'warning')
+            return
+        }
+
+        setIsSubmitting(true)
+        try {
+            const params = [
+                StellarSDK.nativeToScVal(accountAddress, { type: 'address' }),
+            ]
+
+            const xdr = await writeContract.propose(
+                publicKey,
+                action,
+                params,
+                100000
+            )
+
+            await signTransaction(xdr, {
+                networkPassphrase: StellarSDK.Networks.TESTNET,
+            })
+
+            addToast(`${action === 'freeze' ? 'Freeze' : 'Unfreeze'} proposal created successfully!`, 'success')
+            setAccountAddress('')
+            setReason('')
+        } catch (err) {
+            addToast(err instanceof Error ? err.message : `Failed to create ${action} proposal`, 'error')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
     return (
         <div className="space-y-6 max-w-2xl mx-auto">
             <div className="text-center mb-8">
-                <h3 className="text-xl font-bold text-white mb-2 font-heading">Freeze Account</h3>
+                <h3 className="text-xl font-bold text-white mb-2 font-heading">Freeze / Unfreeze Account</h3>
                 <p className="text-zinc-400">Suspend or restore token transfer capabilities for an address.</p>
             </div>
 
             <div className="space-y-4">
-                <Input label="Account Address" placeholder="GXXXXXXXXXXXXXXXXXXXXXXX..." className="bg-black/20 border-white/10 text-white" />
+                <Input
+                    label="Account Address"
+                    placeholder="GXXXXXXXXXXXXXXXXXXXXXXX..."
+                    value={accountAddress}
+                    onChange={(e) => setAccountAddress(e.target.value)}
+                    className="bg-black/20 border-white/10 text-white"
+                />
 
                 <div>
                     <label className="block text-sm font-medium text-zinc-400 mb-2">Action</label>
                     <div className="grid grid-cols-2 gap-4">
-                        <button className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold hover:bg-blue-500/20 transition-all">
-                            Freeze
+                        <button
+                            onClick={() => setAction('freeze')}
+                            className={`p-4 rounded-xl border font-bold transition-all ${
+                                action === 'freeze'
+                                    ? 'bg-blue-500/20 border-blue-500/40 text-blue-400 shadow-lg shadow-blue-500/10'
+                                    : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10'
+                            }`}
+                        >
+                            ❄️ Freeze
                         </button>
-                        <button className="p-4 rounded-xl bg-white/5 border border-white/10 text-zinc-400 font-medium hover:bg-white/10 transition-all">
-                            Unfreeze
+                        <button
+                            onClick={() => setAction('unfreeze')}
+                            className={`p-4 rounded-xl border font-bold transition-all ${
+                                action === 'unfreeze'
+                                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 shadow-lg shadow-emerald-500/10'
+                                    : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10'
+                            }`}
+                        >
+                            🔥 Unfreeze
                         </button>
                     </div>
                 </div>
@@ -300,31 +422,91 @@ function FreezeForm({ publicKey, addToast }: { publicKey: string; addToast: any 
                         className="w-full px-4 py-3 rounded-lg bg-black/20 border border-white/10 text-white placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/50 transition-colors"
                         rows={3}
                         placeholder="e.g., Suspicious activity..."
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
                     />
                 </div>
             </div>
 
             <div className="pt-4">
-                <Button className="w-full h-12 bg-blue-500 text-white hover:bg-blue-600 font-bold">
-                    Create Freeze Proposal
+                <Button
+                    className={`w-full h-12 font-bold ${
+                        action === 'freeze'
+                            ? 'bg-blue-500 text-white hover:bg-blue-600'
+                            : 'bg-emerald-500 text-white hover:bg-emerald-600'
+                    }`}
+                    onClick={handleSubmit}
+                    loading={isSubmitting}
+                >
+                    {isSubmitting ? 'Creating Proposal...' : `Create ${action === 'freeze' ? 'Freeze' : 'Unfreeze'} Proposal`}
                 </Button>
             </div>
         </div>
     )
 }
 
+// ============ KYC FORM (now functional) ============
 function KYCForm({ publicKey, addToast }: { publicKey: string; addToast: any }) {
     const [mode, setMode] = useState<'manual' | 'zk-identity'>('zk-identity')
     const [identityContractId, setIdentityContractId] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [investorAddress, setInvestorAddress] = useState('')
-    const [verificationStatus, setVerificationStatus] = useState('Verified')
     const [investorType, setInvestorType] = useState('Accredited')
     const [jurisdiction, setJurisdiction] = useState('US')
 
-    // Copying logic from previous file for handlers...
-    const handleLinkIdentityContract = async () => { /* ... */ }
-    const handleManualKYCProposal = async () => { /* ... */ }
+    const handleLinkIdentityContract = async () => {
+        if (!identityContractId) {
+            addToast('Please enter an Identity Contract ID', 'warning')
+            return
+        }
+
+        setIsSubmitting(true)
+        try {
+            const xdr = await writeContract.setIdentityContract(publicKey, identityContractId)
+            await signTransaction(xdr, {
+                networkPassphrase: StellarSDK.Networks.TESTNET,
+            })
+
+            addToast('Identity contract linked successfully!', 'success')
+            setIdentityContractId('')
+        } catch (err) {
+            addToast(err instanceof Error ? err.message : 'Failed to link identity contract', 'error')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleManualKYCProposal = async () => {
+        if (!investorAddress) {
+            addToast('Please enter investor address', 'warning')
+            return
+        }
+
+        setIsSubmitting(true)
+        try {
+            const params = [
+                StellarSDK.nativeToScVal(investorAddress, { type: 'address' }),
+            ]
+
+            const xdr = await writeContract.propose(
+                publicKey,
+                'update_kyc',
+                params,
+                100000
+            )
+
+            await signTransaction(xdr, {
+                networkPassphrase: StellarSDK.Networks.TESTNET,
+            })
+
+            addToast('KYC update proposal created!', 'success')
+            setInvestorAddress('')
+        } catch (err) {
+            addToast(err instanceof Error ? err.message : 'Failed to create KYC proposal', 'error')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
 
     return (
         <div className="space-y-6 max-w-2xl mx-auto">
@@ -386,7 +568,7 @@ function KYCForm({ publicKey, addToast }: { publicKey: string; addToast: any }) 
                         onClick={handleLinkIdentityContract}
                         loading={isSubmitting}
                     >
-                        Link Identity Contract
+                        {isSubmitting ? 'Linking...' : 'Link Identity Contract'}
                     </Button>
                 </div>
             ) : (
@@ -401,24 +583,39 @@ function KYCForm({ publicKey, addToast }: { publicKey: string; addToast: any }) 
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-2">Status</label>
-                            <select className="w-full px-4 py-3 rounded-lg bg-black/20 border border-white/10 text-white focus:outline-none focus:border-purple-500/50">
-                                <option>Verified</option>
-                                <option>Pending</option>
+                            <label className="block text-sm font-medium text-zinc-400 mb-2">Type</label>
+                            <select
+                                value={investorType}
+                                onChange={(e) => setInvestorType(e.target.value)}
+                                className="w-full px-4 py-3 rounded-lg bg-black/20 border border-white/10 text-white focus:outline-none focus:border-purple-500/50"
+                            >
+                                <option value="Accredited">Accredited</option>
+                                <option value="Retail">Retail</option>
+                                <option value="Institutional">Institutional</option>
+                                <option value="Qualified">Qualified</option>
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-2">Type</label>
-                            <select className="w-full px-4 py-3 rounded-lg bg-black/20 border border-white/10 text-white focus:outline-none focus:border-purple-500/50">
-                                <option>Accredited</option>
-                                <option>Retail</option>
-                                <option>Institutional</option>
+                            <label className="block text-sm font-medium text-zinc-400 mb-2">Jurisdiction</label>
+                            <select
+                                value={jurisdiction}
+                                onChange={(e) => setJurisdiction(e.target.value)}
+                                className="w-full px-4 py-3 rounded-lg bg-black/20 border border-white/10 text-white focus:outline-none focus:border-purple-500/50"
+                            >
+                                <option value="US">US 🇺🇸</option>
+                                <option value="SG">Singapore 🇸🇬</option>
+                                <option value="EU">European Union 🇪🇺</option>
+                                <option value="AE">UAE 🇦🇪</option>
                             </select>
                         </div>
                     </div>
 
-                    <Button className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-bold mt-4">
-                        Update KYC Logic
+                    <Button
+                        className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-bold mt-4"
+                        onClick={handleManualKYCProposal}
+                        loading={isSubmitting}
+                    >
+                        {isSubmitting ? 'Creating Proposal...' : 'Create KYC Update Proposal'}
                     </Button>
                 </div>
             )}
@@ -426,7 +623,37 @@ function KYCForm({ publicKey, addToast }: { publicKey: string; addToast: any }) 
     )
 }
 
+// ============ YIELD FORM (now functional) ============
 function YieldForm({ publicKey, addToast }: { publicKey: string; addToast: any }) {
+    const [tokenAddress, setTokenAddress] = useState(USDC_TESTNET_ADDRESS)
+    const [amount, setAmount] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const handleSubmit = async () => {
+        if (!tokenAddress || !amount) {
+            addToast('Please fill all fields', 'warning')
+            return
+        }
+
+        setIsSubmitting(true)
+        try {
+            const amountBigInt = parseTokenAmount(amount, 6)
+
+            const xdr = await writeContract.depositYield(publicKey, tokenAddress, amountBigInt)
+
+            await signTransaction(xdr, {
+                networkPassphrase: StellarSDK.Networks.TESTNET,
+            })
+
+            addToast('Yield deposited successfully! Token holders can now claim.', 'success')
+            setAmount('')
+        } catch (err) {
+            addToast(err instanceof Error ? err.message : 'Failed to deposit yield', 'error')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
     return (
         <div className="space-y-6 max-w-2xl mx-auto">
             <div className="text-center mb-8">
@@ -441,13 +668,31 @@ function YieldForm({ publicKey, addToast }: { publicKey: string; addToast: any }
             </div>
 
             <div className="space-y-4">
-                <Input label="Token Address" placeholder="USDC Address..." defaultValue={USDC_TESTNET_ADDRESS} className="bg-black/20 border-white/10 text-white" />
-                <Input label="Amount" type="number" placeholder="0.00" suffix="USDC" className="bg-black/20 border-white/10 text-white" />
+                <Input
+                    label="Token Address"
+                    placeholder="USDC Address..."
+                    value={tokenAddress}
+                    onChange={(e) => setTokenAddress(e.target.value)}
+                    className="bg-black/20 border-white/10 text-white"
+                />
+                <Input
+                    label="Amount"
+                    type="number"
+                    placeholder="0.00"
+                    suffix="USDC"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="bg-black/20 border-white/10 text-white"
+                />
             </div>
 
             <div className="pt-4">
-                <Button className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
-                    Deposit Yield
+                <Button
+                    className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                    onClick={handleSubmit}
+                    loading={isSubmitting}
+                >
+                    {isSubmitting ? 'Depositing...' : 'Deposit Yield'}
                 </Button>
             </div>
         </div>

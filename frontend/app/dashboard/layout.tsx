@@ -37,7 +37,6 @@ export default function DashboardLayout({
     const pathname = usePathname()
     const router = useRouter()
     const { isConnected } = useWallet()
-    const isGovernor = false
 
     return (
         <div className="min-h-screen bg-obsidian-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/10 via-obsidian-950 to-obsidian-950 text-white selection:bg-gold-500/30">
@@ -120,37 +119,35 @@ export default function DashboardLayout({
                         })}
 
                         {/* Admin Section */}
-                        {isGovernor && (
-                            <div className="mt-8 pt-8 border-t border-white/5">
-                                <p className="px-4 text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">
-                                    Administration
-                                </p>
-                                {adminNavigation.map((item) => {
-                                    const isActive = pathname === item.href
-                                    return (
-                                        <Link
-                                            key={item.name}
-                                            href={item.href}
-                                            className="block"
+                        <div className="mt-8 pt-8 border-t border-white/5">
+                            <p className="px-4 text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">
+                                Administration
+                            </p>
+                            {adminNavigation.map((item) => {
+                                const isActive = pathname === item.href
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        className="block"
+                                    >
+                                        <motion.div
+                                            whileHover={{ x: 4 }}
+                                            className={`
+                                                flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
+                                                ${isActive
+                                                    ? 'text-purple-400 bg-purple-500/10 border border-purple-500/20'
+                                                    : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                                                }
+                                            `}
                                         >
-                                            <motion.div
-                                                whileHover={{ x: 4 }}
-                                                className={`
-                                                    flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
-                                                    ${isActive
-                                                        ? 'text-purple-400 bg-purple-500/10 border border-purple-500/20'
-                                                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
-                                                    }
-                                                `}
-                                            >
-                                                <item.icon className="w-5 h-5" />
-                                                {item.name}
-                                            </motion.div>
-                                        </Link>
-                                    )
-                                })}
-                            </div>
-                        )}
+                                            <item.icon className="w-5 h-5" />
+                                            {item.name}
+                                        </motion.div>
+                                    </Link>
+                                )
+                            })}
+                        </div>
                     </nav>
 
                     {/* Network Status Pill */}
@@ -166,10 +163,42 @@ export default function DashboardLayout({
                 </aside>
 
                 {/* Main Content Area */}
-                <main className="flex-1 lg:mr-72 p-6 lg:p-8 min-h-screen">
+                <main className="flex-1 lg:mr-72 p-6 lg:p-8 min-h-screen pb-24 lg:pb-8">
                     {children}
                 </main>
             </div>
+
+            {/* Mobile Bottom Navigation */}
+            <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-obsidian-950/90 backdrop-blur-xl border-t border-white/10">
+                <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
+                    {navigation.map((item) => {
+                        const isActive = pathname === item.href
+                        return (
+                            <Link
+                                key={item.name}
+                                href={item.href}
+                                className="flex flex-col items-center justify-center gap-1 flex-1 py-2 relative"
+                            >
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="mobileNavIndicator"
+                                        className="absolute -top-px left-3 right-3 h-0.5 bg-gold-400 rounded-b shadow-[0_0_8px_rgba(250,204,21,0.5)]"
+                                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                                    />
+                                )}
+                                <item.icon className={`w-5 h-5 transition-colors ${
+                                    isActive ? 'text-gold-400' : 'text-zinc-500'
+                                }`} />
+                                <span className={`text-[10px] font-medium transition-colors ${
+                                    isActive ? 'text-gold-400' : 'text-zinc-600'
+                                }`}>
+                                    {item.name}
+                                </span>
+                            </Link>
+                        )
+                    })}
+                </div>
+            </nav>
         </div>
     )
 }
