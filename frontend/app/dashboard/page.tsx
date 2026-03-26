@@ -1,13 +1,52 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Coins, Shield, Clock, Loader2, Gift } from 'lucide-react'
+import { Coins, Shield, Clock, Loader2, Gift, TrendingUp, BarChart3, Layers, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { useWallet } from '@/lib/store'
 import { useBalance } from '@/lib/hooks/useBalance'
 import { useTokenMetadata } from '@/lib/hooks/useTokenMetadata'
 import { useKycStatus } from '@/lib/hooks/useKycStatus'
 import { usePendingYield } from '@/lib/hooks/usePendingYield'
+import { useTokenStats } from '@/lib/hooks/useTokenStats'
+import { useEffect, useState, useRef } from 'react'
+
+// ============ ANIMATED NUMBER ============
+function AnimatedValue({ value, duration = 1500 }: { value: string; duration?: number }) {
+    const [displayed, setDisplayed] = useState('0.00')
+    const ref = useRef<HTMLSpanElement>(null)
+    const hasAnimated = useRef(false)
+
+    useEffect(() => {
+        if (hasAnimated.current || !value || value === '0.00') {
+            setDisplayed(value)
+            return
+        }
+        hasAnimated.current = true
+        const target = parseFloat(value)
+        if (isNaN(target)) { setDisplayed(value); return }
+
+        let start = 0
+        const step = target / (duration / 16)
+        const timer = setInterval(() => {
+            start += step
+            if (start >= target) {
+                setDisplayed(value)
+                clearInterval(timer)
+            } else {
+                setDisplayed(start.toFixed(2))
+            }
+        }, 16)
+        return () => clearInterval(timer)
+    }, [value, duration])
+
+    return <span ref={ref}>{displayed}</span>
+}
+
+// ============ SKELETON ============
+function Skeleton({ className = '' }: { className?: string }) {
+    return <div className={`animate-pulse bg-white/5 rounded-lg ${className}`} />
+}
 
 export default function DashboardOverview() {
     const { isConnected, publicKey } = useWallet()
@@ -15,6 +54,15 @@ export default function DashboardOverview() {
     const { metadata, isLoading: metadataLoading } = useTokenMetadata()
     const { kycStatus, isLoading: kycLoading } = useKycStatus()
     const { yieldAmount, hasYield, isLoading: yieldLoading, isClaiming, claim } = usePendingYield()
+    const { stats, isLoading: statsLoading } = useTokenStats()
+
+    const [showConfetti, setShowConfetti] = useState(false)
+
+    const handleClaim = async () => {
+        await claim()
+        setShowConfetti(true)
+        setTimeout(() => setShowConfetti(false), 3000)
+    }
 
     if (!isConnected) {
         return (
@@ -33,12 +81,11 @@ export default function DashboardOverview() {
     const symbol = 'XLM'
     const displayBalance = balance || '0.00'
 
-    // Format KYC status for display
+    // KYC display helpers
     const getKycStatusDisplay = () => {
         if (kycLoading) return 'Checking...'
         if (!kycStatus) return 'Not Verified'
         if (!kycStatus.kyc_verified) return 'Not Verified'
-
         const statusMap: Record<string, string> = {
             'Retail': 'Verified (Retail)',
             'Accredited': 'Verified (Accredited)',
@@ -49,14 +96,50 @@ export default function DashboardOverview() {
 
     const kycStatusDisplay = getKycStatusDisplay()
     const isVerified = kycStatus?.kyc_verified
-    const kycStatusColor = isVerified ? 'text-success' : 'text-zinc-500' // Using neon green for success
+    const kycStatusColor = isVerified ? 'text-success' : 'text-zinc-500'
+
+    // Ownership percentage
+    const ownershipPercent = (stats.totalSupply && displayBalance && parseFloat(stats.totalSupply) > 0)
+        ? ((parseFloat(displayBalance) / parseFloat(stats.totalSupply)) * 100).toFixed(4)
+        : '0.00'
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-7xl mx-auto space-y-4"
+            className="max-w-7xl mx-auto space-y-6"
         >
+            {/* Confetti overlay */}
+            {showConfetti && (
+                <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+                    <motion.div
+                        initial={{ scale: 0, opacity: 1 }}
+                        animate={{ scale: 3, opacity: 0 }}
+                        transition={{ duration: 1.5 }}
+                        className="text-6xl"
+                    >
+                        🎉
+                    </motion.div>
+                    {[...Array(12)].map((_, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+                            animate={{
+                                x: (Math.random() - 0.5) * 400,
+                                y: (Math.random() - 0.5) * 400,
+                                opacity: 0,
+                                scale: 0,
+                                rotate: Math.random() * 360,
+                            }}
+                            transition={{ duration: 1.5, delay: Math.random() * 0.3 }}
+                            className="absolute text-2xl"
+                        >
+                            {['💰', '✨', '🪙', '⭐'][i % 4]}
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+
             {/* Header Greeting */}
             <div className="flex items-end justify-between">
                 <div>
@@ -68,6 +151,65 @@ export default function DashboardOverview() {
                     <p className="text-2xl font-bold text-white">${displayBalance}</p>
                 </div>
             </div>
+
+            {/* ===== NETWORK STATS ROW ===== */}
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+                className="grid grid-cols-2 md:grid-cols-4 gap-4"
+            >
+                {[
+                    {
+                        label: 'Token Name',
+                        value: statsLoading ? null : stats.name,
+                        icon: Layers,
+                        color: 'text-purple-400',
+                        bgColor: 'bg-purple-500/10',
+                    },
+                    {
+                        label: 'Symbol',
+                        value: statsLoading ? null : stats.symbol,
+                        icon: Sparkles,
+                        color: 'text-blue-400',
+                        bgColor: 'bg-blue-500/10',
+                    },
+                    {
+                        label: 'Total Supply',
+                        value: statsLoading ? null : `${parseFloat(stats.totalSupply).toLocaleString()}`,
+                        icon: BarChart3,
+                        color: 'text-gold-400',
+                        bgColor: 'bg-gold-400/10',
+                    },
+                    {
+                        label: 'Your Ownership',
+                        value: statsLoading || balanceLoading ? null : `${ownershipPercent}%`,
+                        icon: TrendingUp,
+                        color: 'text-emerald-400',
+                        bgColor: 'bg-emerald-500/10',
+                    },
+                ].map((stat, i) => (
+                    <motion.div
+                        key={stat.label}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.05 + i * 0.05 }}
+                        className="rounded-xl border border-white/5 bg-white/[0.02] p-4 flex items-center gap-3"
+                    >
+                        <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                            <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">{stat.label}</p>
+                            {stat.value !== null ? (
+                                <p className="text-sm font-bold text-white truncate">{stat.value}</p>
+                            ) : (
+                                <Skeleton className="h-4 w-16 mt-1" />
+                            )}
+                        </div>
+                    </motion.div>
+                ))}
+            </motion.div>
 
             {/* Main Hero Card - Glass + Gradient */}
             <motion.div
@@ -88,14 +230,14 @@ export default function DashboardOverview() {
                         </div>
 
                         {balanceLoading ? (
-                            <div className="flex items-center gap-3">
-                                <Loader2 className="w-8 h-8 animate-spin text-white/20" />
-                                <span className="text-3xl text-white/30 font-heading">Loading...</span>
+                            <div className="space-y-3">
+                                <Skeleton className="h-16 w-64" />
+                                <Skeleton className="h-5 w-32" />
                             </div>
                         ) : (
                             <div>
                                 <h2 className="text-6xl lg:text-7xl font-bold font-heading text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-zinc-400 tracking-tight">
-                                    {displayBalance}
+                                    <AnimatedValue value={displayBalance} />
                                 </h2>
                                 <div className="flex items-center gap-3 mt-2">
                                     <span className="text-lg text-zinc-400 font-medium tracking-wide">
@@ -153,7 +295,7 @@ export default function DashboardOverview() {
 
                     <p className="text-sm text-zinc-400 font-medium mb-1">Unclaimed Yield</p>
                     {yieldLoading ? (
-                        <Loader2 className="w-6 h-6 animate-spin text-white/20" />
+                        <Skeleton className="h-8 w-32" />
                     ) : (
                         <p className="text-3xl font-bold text-white font-heading">
                             ${parseFloat(yieldAmount).toFixed(2)} <span className="text-sm text-zinc-500 font-sans font-normal">USDC</span>
@@ -162,7 +304,7 @@ export default function DashboardOverview() {
 
                     <div className="mt-6">
                         <motion.button
-                            onClick={claim}
+                            onClick={handleClaim}
                             disabled={!hasYield || isClaiming || yieldLoading}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -186,7 +328,12 @@ export default function DashboardOverview() {
                 </motion.div>
 
                 {/* KYC Status Card */}
-                <div className="glass-card rounded-2xl p-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                    className="glass-card rounded-2xl p-6"
+                >
                     <div className="flex justify-between items-start mb-8">
                         <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400">
                             <Shield className="w-6 h-6" />
@@ -194,12 +341,21 @@ export default function DashboardOverview() {
                         <div className={`w-2 h-2 rounded-full ${isVerified ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-zinc-700'}`} />
                     </div>
                     <p className="text-sm text-zinc-400 font-medium mb-1">Identity Status</p>
-                    <p className={`text-xl font-bold ${kycStatusColor} font-heading`}>{kycStatusDisplay}</p>
+                    {kycLoading ? (
+                        <Skeleton className="h-6 w-40" />
+                    ) : (
+                        <p className={`text-xl font-bold ${kycStatusColor} font-heading`}>{kycStatusDisplay}</p>
+                    )}
                     {isVerified && <p className="text-xs text-zinc-500 mt-2">Access Level: Level 3</p>}
-                </div>
+                </motion.div>
 
                 {/* Holding Period Card */}
-                <div className="glass-card rounded-2xl p-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="glass-card rounded-2xl p-6"
+                >
                     <div className="flex justify-between items-start mb-8">
                         <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400">
                             <Clock className="w-6 h-6" />
@@ -208,12 +364,17 @@ export default function DashboardOverview() {
                     <p className="text-sm text-zinc-400 font-medium mb-1">Holding Period</p>
                     <p className="text-xl font-bold text-white font-heading">0 Days</p>
                     <p className="text-xs text-zinc-500 mt-2">Next Unlock: Instant</p>
-                </div>
+                </motion.div>
             </div>
 
-            {/* Recent Activity Mini Section (Optional placeholder) */}
+            {/* Recent Activity Mini Section */}
             <div className="pt-8 border-t border-white/5">
-                <h3 className="text-lg font-bold text-white mb-4">Recent Activity</h3>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-white">Recent Activity</h3>
+                    <Link href="/dashboard/history" className="text-sm text-gold-400 hover:text-gold-300 transition-colors">
+                        View All →
+                    </Link>
+                </div>
                 <div className="glass-card rounded-xl p-8 text-center">
                     <p className="text-zinc-500">No recent transactions found.</p>
                 </div>
