@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -5,10 +6,9 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Disable Turbopack for production builds (incompatible with @anon-aadhaar/react)
-  experimental: {
-    // Use webpack for builds
-  },
+  outputFileTracingRoot: path.join(process.cwd(), ".."),
+  // Explicitly configure Turbopack to keep Next.js 16 from rejecting custom webpack config.
+  turbopack: {},
   webpack: (config, { isServer }) => {
     // Polyfill crypto modules for @anon-aadhaar/react
     if (!isServer) {

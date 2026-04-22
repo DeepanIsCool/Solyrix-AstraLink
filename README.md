@@ -3,18 +3,40 @@
 > **"Shopify for Asset Tokenization"** — A production-grade platform for tokenizing real-world assets on the Stellar network with built-in compliance, identity, and yield streaming.
 
 [![Stellar](https://img.shields.io/badge/Stellar-Testnet-blue?style=for-the-badge&logo=stellar)](https://stellar.org)
-[![Soroban](https://img.shields.io/badge/Soroban-v25.0.0-green?style=for-the-badge)](https://soroban.stellar.org)
+[![Soroban](https://img.shields.io/badge/Soroban-v25.3.1-green?style=for-the-badge)](https://soroban.stellar.org)
 [![Next.js](https://img.shields.io/badge/Frontend-Next.js-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
+[![CI](https://github.com/DeepanIsCool/Solyrix-AstraLink/actions/workflows/ci.yml/badge.svg)](https://github.com/DeepanIsCool/Solyrix-AstraLink/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)](LICENSE)
 
 ---
 
 ## 🚀 Live Demo & Deployed Contracts
 
-| Contract | Network | Contract ID | Explorer |
-|----------|---------|-------------|----------|
-| **RWA Token** | Testnet | `CBEHEOVOYODO7D62TFMNMI6EVK6NOLH7MLLUHNKWRGDZATP356YSHQL3` | [View](https://stellar.expert/explorer/testnet/contract/CBEHEOVOYODO7D62TFMNMI6EVK6NOLH7MLLUHNKWRGDZATP356YSHQL3) |
-| **Identity SBT** | Testnet | `CD5ZWBKB4H3HV63Z5TVDOMRNBIQNCUWONHXP5AEDUN52MAPXEIRJNJYH` | [View](https://stellar.expert/explorer/testnet/contract/CD5ZWBKB4H3HV63Z5TVDOMRNBIQNCUWONHXP5AEDUN52MAPXEIRJNJYH) |
+| Contract | Network | Contract ID | Deploy Tx Hash | Explorer |
+|----------|---------|-------------|----------------|----------|
+| **RWA Token** | Testnet | `CBEHEOVOYODO7D62TFMNMI6EVK6NOLH7MLLUHNKWRGDZATP356YSHQL3` | `6480c219464198a120f6b979c607cf89861291a473fa90e2a543d473a560c6a0` | [View](https://stellar.expert/explorer/testnet/contract/CBEHEOVOYODO7D62TFMNMI6EVK6NOLH7MLLUHNKWRGDZATP356YSHQL3) |
+| **Identity SBT** | Testnet | `CD5ZWBKB4H3HV63Z5TVDOMRNBIQNCUWONHXP5AEDUN52MAPXEIRJNJYH` | `5c76936c34d565e175144980e9362c4b14270226034b11fb95f5fb7286fbd740` | [View](https://stellar.expert/explorer/testnet/contract/CD5ZWBKB4H3HV63Z5TVDOMRNBIQNCUWONHXP5AEDUN52MAPXEIRJNJYH) |
+
+> Live demo URL: **Deployment-ready**. Run `cd frontend && npx vercel --prod` or connect the repo to Vercel/Netlify, then replace this line with the generated public URL.
+
+## ✅ Submission Checklist
+
+- **Public GitHub Repository**: https://github.com/DeepanIsCool/Solyrix-AstraLink
+- **README Documentation**: Complete and includes architecture, setup, deployment, and compliance evidence.
+- **Minimum 8+ Meaningful Commits**: `16` commits on `main` (`git rev-list --count HEAD`).
+- **CI/CD Running**: GitHub Actions workflow + badge in this README (`.github/workflows/ci.yml`) running `cargo test --workspace --locked`, `npm run lint`, and `npm run build`.
+- **Mobile Responsive Proof**:
+
+![Mobile Responsive View](docs/screenshots/mobile-responsive-home.png)
+
+- **Inter-Contract Call Working**:
+    - Runtime path: `RWAToken::transfer` -> `compliance::verify_transfer` -> `IdentityClient::has_sbt`
+    - Verified by tests in `contracts/rwa-token/src/test.rs`:
+        - `test_transfer_uses_identity_contract_when_configured`
+        - `test_transfer_fails_when_identity_sbt_missing`
+        - `test_identity_contract_can_override_local_kyc_flag`
+- **Custom Token Address (deployed)**:
+    - `CBEHEOVOYODO7D62TFMNMI6EVK6NOLH7MLLUHNKWRGDZATP356YSHQL3`
 
 ---
 
@@ -211,12 +233,12 @@ stateDiagram-v2
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/shinjinihehe/Solyrix-AstraLink-.git
-cd Solyrix-AstraLink-
+git clone https://github.com/DeepanIsCool/Solyrix-AstraLink.git
+cd Solyrix-AstraLink
 
 # Install Frontend Dependencies
 cd frontend
-npm install
+npm ci
 
 # Setup Environment
 cp .env.local.example .env.local
@@ -229,7 +251,7 @@ cp .env.local.example .env.local
 ```bash
 cd ../contracts/rwa-token
 stellar contract build
-# Output: target/wasm32-unknown-unknown/release/astralink_rwa_token.wasm
+# Output: target/wasm32v1-none/release/astralink_rwa_token.wasm
 ```
 
 ### 3. Deploy (Testnet)
@@ -239,7 +261,7 @@ stellar keys generate alice --network testnet
 
 # Deploy
 stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/astralink_rwa_token.wasm \
+    --wasm target/wasm32v1-none/release/astralink_rwa_token.wasm \
   --source alice \
   --network testnet
 ```
@@ -250,6 +272,28 @@ cd ../frontend
 npm run dev
 # Open http://localhost:3000
 ```
+
+### 5. Deploy Frontend
+```bash
+cd frontend
+npx vercel --prod
+```
+After deployment, copy the generated URL into the "Live demo URL" line at the top of this README.
+
+---
+
+## ✅ Verification
+
+```bash
+cargo test --workspace --locked
+cd frontend && npm run lint
+cd frontend && npm run build
+```
+
+Latest local verification in this workspace:
+- `36` smart contract tests passed.
+- Frontend lint passed.
+- Frontend production build passed.
 
 ---
 

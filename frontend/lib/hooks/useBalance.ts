@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useWallet } from '@/lib/store'
 
 // Use Horizon API for native XLM balance (Soroban RPC doesn't have balance info)
@@ -12,7 +12,7 @@ export function useBalance() {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    const fetchBalance = async () => {
+    const fetchBalance = useCallback(async () => {
         if (!publicKey) {
             setBalance(null)
             return
@@ -50,7 +50,7 @@ export function useBalance() {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [publicKey])
 
     useEffect(() => {
         fetchBalance()
@@ -58,7 +58,7 @@ export function useBalance() {
         // Poll every 10 seconds
         const interval = setInterval(fetchBalance, 10000)
         return () => clearInterval(interval)
-    }, [publicKey])
+    }, [fetchBalance])
 
     return { balance, isLoading, error, refetch: fetchBalance }
 }

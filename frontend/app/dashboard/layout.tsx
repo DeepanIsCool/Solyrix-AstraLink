@@ -14,7 +14,6 @@ import {
     History
 } from 'lucide-react'
 import { WalletButton } from '@/components/WalletButton'
-import { useWallet } from '@/lib/store'
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -36,8 +35,6 @@ export default function DashboardLayout({
 }) {
     const pathname = usePathname()
     const router = useRouter()
-    const { isConnected } = useWallet()
-
     return (
         <div className="min-h-screen bg-obsidian-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/10 via-obsidian-950 to-obsidian-950 text-white selection:bg-gold-500/30">
 

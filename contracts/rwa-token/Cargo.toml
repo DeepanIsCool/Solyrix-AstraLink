@@ -9,10 +9,10 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-soroban-sdk = "=25.0.0"  # Use the latest stable version
+soroban-sdk = "=25.3.1"  # Use the latest stable version
 
 [dev-dependencies]
-soroban-sdk = { version = "=25.0.0", features = ["testutils"] }
+soroban-sdk = { version = "=25.3.1", features = ["testutils"] }
 
 [profile.release]
 opt-level = "z"

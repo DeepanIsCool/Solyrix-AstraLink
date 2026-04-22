@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { History, ExternalLink, FileSearch, Loader2, RefreshCw, ArrowUpRight, ArrowDownLeft, Flame, Snowflake, Shield, Vote, Coins, AlertTriangle } from 'lucide-react'
+import { History, ExternalLink, FileSearch, Loader2, RefreshCw, ArrowUpRight, Flame, Snowflake, Shield, Vote, Coins, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { CONTRACT_ID } from '@/lib/contract'

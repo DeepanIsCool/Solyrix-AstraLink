@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Vote, CheckCircle2, Loader2, Plus, AlertCircle, Check } from 'lucide-react'
+import { Vote, Loader2, Plus, AlertCircle, Check } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { useProposals } from '@/lib/hooks/useProposals'

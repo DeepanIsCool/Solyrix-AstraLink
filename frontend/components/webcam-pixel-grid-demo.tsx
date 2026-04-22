@@ -1,12 +1,11 @@
 import { WebcamPixelGrid } from "@/components/ui/webcam-pixel-grid";
 import { EncryptedText } from "@/components/ui/encrypted-text";
 import Link from "next/link";
-import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
 import {
     Shield, Fingerprint, Coins, Users, ArrowRight,
-    CheckCircle, Zap, Lock, Globe, BarChart3,
+    Zap, Globe, BarChart3,
     GitBranch, Layers, ChevronDown
 } from "lucide-react";
 
@@ -237,7 +236,7 @@ export default function WebcamPixelGridDemo() {
                                     <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                                 </button>
                             </Link>
-                            <a href="https://github.com/shinjinihehe/Solyrix-AstraLink" target="_blank" rel="noopener noreferrer">
+                            <a href="https://github.com/DeepanIsCool/Solyrix-AstraLink" target="_blank" rel="noopener noreferrer">
                                 <button className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-8 text-base font-medium text-white backdrop-blur-md transition-all hover:bg-white/10 hover:border-white/20 hover:scale-105">
                                     <GitBranch className="w-4 h-4" />
                                     Source Code
@@ -542,7 +541,7 @@ export default function WebcamPixelGridDemo() {
                                     <ArrowRight className="w-5 h-5" />
                                 </motion.button>
                             </Link>
-                            <a href="https://github.com/shinjinihehe/Solyrix-AstraLink" target="_blank" rel="noopener noreferrer">
+                            <a href="https://github.com/DeepanIsCool/Solyrix-AstraLink" target="_blank" rel="noopener noreferrer">
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
@@ -578,7 +577,7 @@ export default function WebcamPixelGridDemo() {
                         </div>
 
                         <div className="flex items-center gap-4">
-                            <a href="https://github.com/shinjinihehe/Solyrix-AstraLink" target="_blank" rel="noopener noreferrer"
+                            <a href="https://github.com/DeepanIsCool/Solyrix-AstraLink" target="_blank" rel="noopener noreferrer"
                                 className="text-zinc-500 hover:text-white transition-colors">
                                 <GitBranch className="w-5 h-5" />
                             </a>

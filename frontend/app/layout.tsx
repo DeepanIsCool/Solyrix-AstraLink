@@ -2,20 +2,9 @@
 
 import { ToastContainer } from '@/components/ui/Toast'
 import { AnonAadhaarProvider } from '@anon-aadhaar/react'
-import { Unbounded, Inter } from 'next/font/google'
+import { GeistMono } from 'geist/font/mono'
+import { GeistSans } from 'geist/font/sans'
 import './globals.css'
-
-const unbounded = Unbounded({
-  subsets: ['latin'],
-  variable: '--font-unbounded',
-  display: 'swap',
-})
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-})
 
 export default function RootLayout({
   children,
@@ -23,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${unbounded.variable} ${inter.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="antialiased bg-obsidian-950 font-sans">
         <AnonAadhaarProvider
           _useTestAadhaar={true}

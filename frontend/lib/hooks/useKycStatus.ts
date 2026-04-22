@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { contract } from '@/lib/contract'
 import { useWallet } from '@/lib/store'
 
@@ -19,7 +19,7 @@ export function useKycStatus() {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    const fetchKycStatus = async () => {
+    const fetchKycStatus = useCallback(async () => {
         if (!publicKey) {
             setKycStatus(null)
             return
@@ -31,7 +31,7 @@ export function useKycStatus() {
         try {
             const status = await contract.getKycStatus(publicKey)
             setKycStatus(status)
-        } catch (err) {
+        } catch {
             // If no KYC record exists, return default unverified status
             // No KYC record found, using defaults
             setKycStatus({
@@ -46,11 +46,11 @@ export function useKycStatus() {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [publicKey])
 
     useEffect(() => {
         fetchKycStatus()
-    }, [publicKey])
+    }, [fetchKycStatus])
 
     return { kycStatus, isLoading, error, refetch: fetchKycStatus }
 }

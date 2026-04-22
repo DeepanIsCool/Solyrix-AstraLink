@@ -1,8 +1,6 @@
 'use client'
 
-import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { parseTokenAmount, writeContract } from '@/lib/contract'
 import { useIsGovernor } from '@/lib/hooks/useIsGovernor'
@@ -10,13 +8,19 @@ import { useToast, useWallet } from '@/lib/store'
 import { signTransaction } from '@stellar/freighter-api'
 import * as StellarSDK from '@stellar/stellar-sdk'
 import { motion } from 'framer-motion'
-import { Banknote, Coins, Flame, Settings, Shield, ShieldX, Snowflake, UserCheck, Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { Banknote, Coins, Flame, Settings, Shield, ShieldX, Snowflake, UserCheck } from 'lucide-react'
+import { type ComponentType, useState } from 'react'
 
 // Known USDC testnet address (Stellar testnet)
 const USDC_TESTNET_ADDRESS = 'CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA'
 
 type ActionTab = 'mint' | 'burn' | 'freeze' | 'kyc' | 'yield'
+type TabDefinition = {
+    id: ActionTab
+    label: string
+    icon: ComponentType<{ className?: string }>
+    color: string
+}
 
 export default function AdminPage() {
     const { publicKey, isConnected } = useWallet()
@@ -65,7 +69,7 @@ export default function AdminPage() {
         )
     }
 
-    const tabs: { id: ActionTab; label: string; icon: any; color: string }[] = [
+    const tabs: TabDefinition[] = [
         { id: 'mint', label: 'Mint Tokens', icon: Coins, color: 'text-gold-400' },
         { id: 'burn', label: 'Burn Tokens', icon: Flame, color: 'text-red-400' },
         { id: 'freeze', label: 'Freeze Actions', icon: Snowflake, color: 'text-blue-400' },

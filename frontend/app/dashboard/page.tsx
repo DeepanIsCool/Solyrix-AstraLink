@@ -49,9 +49,9 @@ function Skeleton({ className = '' }: { className?: string }) {
 }
 
 export default function DashboardOverview() {
-    const { isConnected, publicKey } = useWallet()
+    const { isConnected } = useWallet()
     const { balance, isLoading: balanceLoading } = useBalance()
-    const { metadata, isLoading: metadataLoading } = useTokenMetadata()
+    const { isLoading: metadataLoading } = useTokenMetadata()
     const { kycStatus, isLoading: kycLoading } = useKycStatus()
     const { yieldAmount, hasYield, isLoading: yieldLoading, isClaiming, claim } = usePendingYield()
     const { stats, isLoading: statsLoading } = useTokenStats()

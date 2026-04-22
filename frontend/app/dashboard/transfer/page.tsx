@@ -1,7 +1,6 @@
 'use client'
 
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { contract, parseTokenAmount, writeContract } from '@/lib/contract'
 import { useToast, useWallet } from '@/lib/store'
@@ -27,8 +26,8 @@ export default function TransferPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Real KYC status from blockchain
-    const [senderKyc, setSenderKyc] = useState<any | null>(null)
-    const [recipientKyc, setRecipientKyc] = useState<any | null>(null)
+    const [senderKyc, setSenderKyc] = useState<Awaited<ReturnType<typeof contract.getKycStatus>>>(null)
+    const [recipientKyc, setRecipientKyc] = useState<Awaited<ReturnType<typeof contract.getKycStatus>>>(null)
     const [senderBalance, setSenderBalance] = useState<bigint>(BigInt(0))
     const [isLoadingKyc, setIsLoadingKyc] = useState(false)
 
@@ -157,7 +156,7 @@ export default function TransferPage() {
             const xdr = await writeContract.transfer(publicKey, recipient, amountBigInt)
 
             // Sign with Freighter
-            const signedXdr = await signTransaction(xdr, {
+            await signTransaction(xdr, {
                 networkPassphrase: StellarSDK.Networks.TESTNET,
             })
 

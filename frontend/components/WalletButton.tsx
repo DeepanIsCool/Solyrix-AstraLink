@@ -1,8 +1,8 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Wallet, X, LogOut } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Wallet, LogOut } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
 import { useWallet } from '@/lib/store'
 import {
     isConnected,
@@ -16,11 +16,7 @@ export function WalletButton() {
     const { isConnected: walletConnected, publicKey, setConnected, disconnect } = useWallet()
     const [isLoading, setIsLoading] = useState(false)
 
-    useEffect(() => {
-        checkConnection()
-    }, [])
-
-    const checkConnection = async () => {
+    const checkConnection = useCallback(async () => {
         try {
             const connected = await isConnected()
 
@@ -35,7 +31,11 @@ export function WalletButton() {
         } catch (error) {
             console.error('Error checking Freighter connection:', error)
         }
-    }
+    }, [setConnected])
+
+    useEffect(() => {
+        checkConnection()
+    }, [checkConnection])
 
     const connectWallet = async () => {
         setIsLoading(true)
@@ -62,7 +62,7 @@ export function WalletButton() {
             const { address } = await getAddress()
 
             // Get network details
-            const network = await getNetworkDetails()
+            await getNetworkDetails()
 
             setConnected(true, address)
 

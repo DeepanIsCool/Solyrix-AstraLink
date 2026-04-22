@@ -54,7 +54,7 @@ export function usePendingYield() {
         try {
             const xdr = await writeContract.claimYield(publicKey)
 
-            const signedResult = await signTransaction(xdr, {
+            await signTransaction(xdr, {
                 networkPassphrase: StellarSDK.Networks.TESTNET,
             })
 

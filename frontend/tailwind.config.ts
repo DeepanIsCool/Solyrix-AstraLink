@@ -1,5 +1,7 @@
+import defaultTheme from 'tailwindcss/defaultTheme'
 import type { Config } from 'tailwindcss'
-const { fontFamily } = require('tailwindcss/defaultTheme')
+
+const { fontFamily } = defaultTheme
 
 const config: Config = {
   content: [
@@ -38,8 +40,8 @@ const config: Config = {
         }
       },
       fontFamily: {
-        heading: ['var(--font-unbounded)', ...fontFamily.sans],
-        sans: ['var(--font-inter)', ...fontFamily.sans],
+        heading: ['var(--font-geist-mono)', ...fontFamily.mono],
+        sans: ['var(--font-geist-sans)', ...fontFamily.sans],
       },
       backgroundImage: {
         'glow-gradient': 'linear-gradient(135deg, rgba(250, 204, 21, 0.15) 0%, rgba(168, 85, 247, 0.05) 100%)',

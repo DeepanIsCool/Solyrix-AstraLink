@@ -8,7 +8,6 @@ import { LogInWithAnonAadhaar, useAnonAadhaar } from '@anon-aadhaar/react'
 import { motion } from 'framer-motion'
 import { BadgeCheck, Clock, DollarSign, Fingerprint, Globe, Loader2, Shield, Sparkles, TrendingUp } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 
 const jurisdictionMap: { [key: string]: { name: string; flag: string } } = {
     'US': { name: 'United States', flag: '🇺🇸' },
@@ -65,7 +64,7 @@ export default function CompliancePage() {
                     localStorage.removeItem('anonAadhaar')
                 }
             }
-        } catch (err) {
+        } catch {
             // If parsing fails, clear the storage
             localStorage.removeItem('anonAadhaar')
         }
@@ -247,7 +246,7 @@ export default function CompliancePage() {
                                             </div>
                                         )}
                                         <p className="text-sm text-zinc-500">
-                                            Click the "Login" button at the top right to verify your identity with Anon Aadhaar.
+                                            Click the &quot;Login&quot; button at the top right to verify your identity with Anon Aadhaar.
                                         </p>
                                     </div>
                                 )}
